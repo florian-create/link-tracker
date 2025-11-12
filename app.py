@@ -19,6 +19,29 @@ def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     return conn
 
+def ensure_tables_exist():
+    """Ensure database tables exist, create them if they don't"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Check if tables exist
+        cur.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables
+                WHERE table_name = 'links'
+            )
+        """)
+
+        if not cur.fetchone()[0]:
+            # Tables don't exist, create them
+            init_db()
+
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error checking/creating tables: {e}")
+
 def init_db():
     """Initialize database tables"""
     conn = get_db_connection()
@@ -80,6 +103,9 @@ def index():
 @app.route('/api/create-link', methods=['POST'])
 def create_link():
     """Create a new tracked link - Called from Clay"""
+    # Ensure tables exist on first request
+    ensure_tables_exist()
+
     data = request.json
 
     # Validate required fields
