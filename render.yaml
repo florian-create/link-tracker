@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: link-tracker
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: link-tracker-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+databases:
+  - name: link-tracker-db
+    databaseName: link_tracker
+    user: link_tracker_user
+    plan: free
