@@ -43,6 +43,17 @@
             font-weight: 700;
             color: #fff;
             letter-spacing: -0.5px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .logo-subtitle {
+            font-size: 0.5rem;
+            font-weight: 400;
+            color: #666;
+            letter-spacing: 0.5px;
+            text-transform: lowercase;
         }
 
         .time-filter {
@@ -456,7 +467,10 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="logo">LINK TRACKER</div>
+            <div class="logo">
+                <span>LINK TRACKER</span>
+                <span class="logo-subtitle">by aura</span>
+            </div>
             <div style="display: flex; gap: 1rem; align-items: center;">
                 <select class="filter-select" id="globalCampaignFilter" style="min-width: 200px;">
                     <option value="">All Campaigns</option>
