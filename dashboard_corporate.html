@@ -161,37 +161,37 @@
 
         .heatmap-grid {
             display: grid;
-            grid-template-columns: 25px repeat(7, 1fr);
-            gap: 1px;
+            grid-template-columns: 50px repeat(7, 1fr);
+            gap: 2px;
             margin-top: 0.5rem;
-            max-width: 350px;
-            font-size: 0.5rem;
+            max-width: 700px;
+            font-size: 1rem;
         }
 
         .heatmap-label {
-            font-size: 0.5rem;
+            font-size: 1rem;
             color: #666;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding-right: 0.2rem;
+            padding-right: 0.4rem;
             line-height: 1;
         }
 
         .heatmap-day {
-            font-size: 0.5rem;
+            font-size: 1rem;
             color: #666;
             text-align: center;
-            padding: 0.15rem 0;
+            padding: 0.3rem 0;
             font-weight: 600;
             line-height: 1;
         }
 
         .heatmap-cell {
             width: 100%;
-            height: 8px;
+            height: 16px;
             background: #1a1a1a;
-            border-radius: 1px;
+            border-radius: 2px;
             cursor: pointer;
             transition: all 0.15s;
         }
@@ -385,31 +385,34 @@
         /* Sankey styles */
         #sankeyChart {
             width: 100%;
-            height: 300px;
+            height: 100%;
+            min-height: 450px;
         }
 
         .sankey-node rect {
-            rx: 4;
-            ry: 4;
-            stroke: #333;
-            stroke-opacity: 0.3;
+            rx: 2;
+            ry: 2;
+            stroke: #444;
+            stroke-opacity: 0.6;
             stroke-width: 1;
         }
 
         .sankey-node text {
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 10px;
+            font-weight: 500;
             pointer-events: none;
-            fill: #fff;
+            fill: #e5e5e5;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
         }
 
         .sankey-link {
             fill: none;
-            stroke-opacity: 0.4;
+            stroke-opacity: 0.35;
         }
 
         .sankey-link:hover {
-            stroke-opacity: 0.7;
+            stroke-opacity: 0.65;
         }
 
         .sankey-tooltip {
@@ -491,7 +494,7 @@
         </div>
 
         <!-- Heatmap and Sankey -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start;">
             <div class="heatmap-card">
                 <div class="chart-header">
                     <div class="chart-title">Click Activity Heatmap</div>
@@ -501,11 +504,11 @@
                 </div>
             </div>
 
-            <div class="chart-card">
+            <div class="chart-card" style="display: flex; flex-direction: column;">
                 <div class="chart-header">
                     <div class="chart-title">Conversion Funnel</div>
                 </div>
-                <div id="sankeyChart"></div>
+                <div id="sankeyChart" style="flex: 1;"></div>
                 <div class="sankey-tooltip" id="sankeyTooltip"></div>
             </div>
         </div>
@@ -627,40 +630,37 @@
             if (!containerNode) return;
 
             const width = containerNode.getBoundingClientRect().width;
-            const height = 300;
+            const height = 450;
 
             // Create SVG
             const svg = container.append('svg')
                 .attr('viewBox', `0 0 ${width} ${height}`)
                 .attr('preserveAspectRatio', 'xMidYMid meet');
 
-            // Prepare Sankey data
-            const clickedLinks = totalClicks; // Links that were clicked at least once
-            const unclickedLinks = totalLinks - clickedLinks;
-            const repeatClicks = totalClicks - uniqueVisitors; // Multiple clicks from same visitors
+            // Prepare Sankey data - simplified flow
+            const clickedLinks = Math.max(1, uniqueVisitors); // Only count unique visitors as "clicked"
+            const unclickedLinks = Math.max(1, totalLinks - clickedLinks);
 
             const data = {
                 nodes: [
-                    { id: "Total Links" },
-                    { id: "Clicked" },
-                    { id: "Not Clicked" },
-                    { id: "Unique Visitors" },
-                    { id: "Repeat Visits" }
+                    { id: "TOTAL LINKS" },
+                    { id: "CLICKED" },
+                    { id: "NOT CLICKED" },
+                    { id: "UNIQUE VISITORS" }
                 ],
                 links: [
-                    { source: "Total Links", target: "Clicked", value: Math.max(1, clickedLinks) },
-                    { source: "Total Links", target: "Not Clicked", value: Math.max(1, unclickedLinks) },
-                    { source: "Clicked", target: "Unique Visitors", value: Math.max(1, uniqueVisitors) },
-                    { source: "Clicked", target: "Repeat Visits", value: Math.max(1, repeatClicks) }
+                    { source: "TOTAL LINKS", target: "CLICKED", value: clickedLinks, type: "success" },
+                    { source: "TOTAL LINKS", target: "NOT CLICKED", value: unclickedLinks, type: "failure" },
+                    { source: "CLICKED", target: "UNIQUE VISITORS", value: clickedLinks, type: "success" }
                 ]
             };
 
             // Create sankey generator
             const sankeyGenerator = d3.sankey()
                 .nodeId(d => d.id)
-                .nodeWidth(15)
-                .nodePadding(20)
-                .extent([[1, 1], [width - 1, height - 50]]);
+                .nodeWidth(12)
+                .nodePadding(30)
+                .extent([[40, 20], [width - 40, height - 20]]);
 
             const graph = sankeyGenerator({
                 nodes: data.nodes.map(d => Object.assign({}, d)),
@@ -669,10 +669,18 @@
 
             const tooltip = d3.select('#sankeyTooltip');
 
-            // Color scale
-            const colorScale = d3.scaleOrdinal()
-                .domain(["Total Links", "Clicked", "Not Clicked", "Unique Visitors", "Repeat Visits"])
-                .range(["#6474ea", "#10b981", "#ef4444", "#f59e0b", "#8b5cf6"]);
+            // Scientific color scheme - green for success, red for failure
+            const nodeColors = {
+                "TOTAL LINKS": "rgba(100, 100, 100, 0.7)",
+                "CLICKED": "rgba(34, 197, 94, 0.7)",      // Green transparent
+                "NOT CLICKED": "rgba(239, 68, 68, 0.7)",  // Red transparent
+                "UNIQUE VISITORS": "rgba(34, 197, 94, 0.9)" // Brighter green
+            };
+
+            const linkColors = {
+                "success": "rgba(34, 197, 94, 0.4)",  // Green transparent for success flows
+                "failure": "rgba(239, 68, 68, 0.4)"   // Red transparent for failure flows
+            };
 
             // Draw links
             svg.append('g')
@@ -681,14 +689,14 @@
                 .join('path')
                     .attr('class', 'sankey-link')
                     .attr('d', d3.sankeyLinkHorizontal())
-                    .attr('stroke-width', d => Math.max(1, d.width))
-                    .attr('stroke', d => colorScale(d.source.id))
+                    .attr('stroke-width', d => Math.max(2, d.width))
+                    .attr('stroke', d => linkColors[d.type])
                     .on('mousemove', (event, d) => {
                         const percentage = d.source.value > 0 ? ((d.value / d.source.value) * 100).toFixed(1) : 0;
                         tooltip.style('display', 'block')
                             .style('left', (event.pageX + 10) + 'px')
                             .style('top', (event.pageY + 10) + 'px')
-                            .html(`${d.source.id} → ${d.target.id}<br><strong>${d.value}</strong> (${percentage}%)`);
+                            .html(`${d.source.id} → ${d.target.id}<br><strong>${d.value.toLocaleString()}</strong> (${percentage}%)`);
                     })
                     .on('mouseout', () => tooltip.style('display', 'none'));
 
@@ -701,39 +709,41 @@
                     .attr('transform', d => `translate(${d.x0},${d.y0})`);
 
             node.append('rect')
-                .attr('height', d => Math.max(1, d.y1 - d.y0))
+                .attr('height', d => Math.max(2, d.y1 - d.y0))
                 .attr('width', d => d.x1 - d.x0)
-                .attr('fill', d => colorScale(d.id))
+                .attr('fill', d => nodeColors[d.id])
                 .on('mousemove', (event, d) => {
+                    const percentage = totalLinks > 0 ? ((d.value / totalLinks) * 100).toFixed(1) : 0;
                     tooltip.style('display', 'block')
                         .style('left', (event.pageX + 10) + 'px')
                         .style('top', (event.pageY + 10) + 'px')
-                        .html(`<strong>${d.id}</strong><br>Total: ${d.value}`);
+                        .html(`<strong>${d.id}</strong><br>n = ${d.value.toLocaleString()} (${percentage}%)`);
                 })
                 .on('mouseout', () => tooltip.style('display', 'none'));
 
             // Add labels
             node.append('text')
-                .attr('x', -6)
+                .attr('x', -8)
                 .attr('y', d => (d.y1 - d.y0) / 2)
                 .attr('dy', '0.35em')
                 .attr('text-anchor', 'end')
                 .text(d => d.id)
                 .filter(d => d.x0 < width / 2)
-                .attr('x', d => d.x1 - d.x0 + 6)
+                .attr('x', d => d.x1 - d.x0 + 8)
                 .attr('text-anchor', 'start');
 
-            // Add value labels below node names
+            // Add value labels with scientific notation (n = X)
             node.append('text')
-                .attr('x', -6)
-                .attr('y', d => (d.y1 - d.y0) / 2 + 12)
+                .attr('x', -8)
+                .attr('y', d => (d.y1 - d.y0) / 2 + 14)
                 .attr('dy', '0.35em')
                 .attr('text-anchor', 'end')
-                .attr('fill', '#888')
-                .attr('font-size', '10px')
-                .text(d => d.value)
+                .attr('fill', '#666')
+                .attr('font-size', '9px')
+                .attr('font-family', 'Courier New, monospace')
+                .text(d => `n = ${d.value.toLocaleString()}`)
                 .filter(d => d.x0 < width / 2)
-                .attr('x', d => d.x1 - d.x0 + 6)
+                .attr('x', d => d.x1 - d.x0 + 8)
                 .attr('text-anchor', 'start');
         }
 
