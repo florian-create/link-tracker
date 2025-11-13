@@ -399,11 +399,16 @@
     <div class="header">
         <div class="header-content">
             <div class="logo">LINK TRACKER</div>
-            <div class="time-filter">
-                <button class="time-btn" data-range="24h">24H</button>
-                <button class="time-btn" data-range="7d">7D</button>
-                <button class="time-btn active" data-range="30d">30D</button>
-                <button class="time-btn" data-range="all">ALL</button>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <select class="filter-select" id="globalCampaignFilter" style="min-width: 200px;">
+                    <option value="">All Campaigns</option>
+                </select>
+                <div class="time-filter">
+                    <button class="time-btn" data-range="24h">24H</button>
+                    <button class="time-btn" data-range="7d">7D</button>
+                    <button class="time-btn active" data-range="30d">30D</button>
+                    <button class="time-btn" data-range="all">ALL</button>
+                </div>
             </div>
         </div>
     </div>
@@ -448,9 +453,6 @@
             <div class="table-header">
                 <h2 class="table-title">Click Details</h2>
                 <div class="table-actions">
-                    <select class="filter-select" id="campaignFilter">
-                        <option value="">All Campaigns</option>
-                    </select>
                     <button class="export-btn" onclick="exportCSV()">EXPORT CSV</button>
                 </div>
             </div>
@@ -478,6 +480,7 @@
 
     <script>
         let currentRange = '30d';
+        let currentCampaign = '';
         let allClicks = [];
         let timelineChart = null;
 
@@ -489,6 +492,12 @@
                 currentRange = btn.dataset.range;
                 loadAllData();
             });
+        });
+
+        // Global campaign filter
+        document.getElementById('globalCampaignFilter').addEventListener('change', (e) => {
+            currentCampaign = e.target.value;
+            loadAllData();
         });
 
         // Load all data
@@ -505,7 +514,11 @@
         // Load analytics
         async function loadAnalytics() {
             try {
-                const response = await fetch(`/api/analytics?range=${currentRange}`);
+                let url = `/api/analytics?range=${currentRange}`;
+                if (currentCampaign) {
+                    url += `&campaign=${currentCampaign}`;
+                }
+                const response = await fetch(url);
                 const data = await response.json();
 
                 document.getElementById('statsGrid').innerHTML = `
@@ -552,7 +565,11 @@
         // Load timeline
         async function loadTimeline() {
             try {
-                const response = await fetch(`/api/analytics/timeline?range=${currentRange}`);
+                let url = `/api/analytics/timeline?range=${currentRange}`;
+                if (currentCampaign) {
+                    url += `&campaign=${currentCampaign}`;
+                }
+                const response = await fetch(url);
                 const data = await response.json();
 
                 const ctx = document.getElementById('timelineChart');
@@ -612,7 +629,11 @@
         // Load heatmap
         async function loadHeatmap() {
             try {
-                const response = await fetch(`/api/heatmap?range=${currentRange}`);
+                let url = `/api/heatmap?range=${currentRange}`;
+                if (currentCampaign) {
+                    url += `&campaign=${currentCampaign}`;
+                }
+                const response = await fetch(url);
                 const data = await response.json();
 
                 renderHeatmap(data);
@@ -673,9 +694,9 @@
         }
 
         // Load clicks
-        async function loadClicks(campaign = '') {
+        async function loadClicks() {
             try {
-                const url = campaign ? `/api/clicks?campaign=${campaign}` : '/api/clicks';
+                const url = currentCampaign ? `/api/clicks?campaign=${currentCampaign}` : '/api/clicks';
                 const response = await fetch(url);
                 allClicks = await response.json();
 
@@ -737,7 +758,9 @@
                 const response = await fetch('/api/campaigns');
                 const campaigns = await response.json();
 
-                const select = document.getElementById('campaignFilter');
+                const select = document.getElementById('globalCampaignFilter');
+                // Clear existing options except "All Campaigns"
+                select.innerHTML = '<option value="">All Campaigns</option>';
                 campaigns.forEach(campaign => {
                     const option = document.createElement('option');
                     option.value = campaign;
@@ -784,11 +807,6 @@
             a.download = `clicks_export_${Date.now()}.csv`;
             a.click();
         }
-
-        // Campaign filter
-        document.getElementById('campaignFilter').addEventListener('change', (e) => {
-            loadClicks(e.target.value);
-        });
 
         // Initial load
         loadAllData();

@@ -192,8 +192,9 @@ def redirect_link(link_id):
 
 @app.route('/api/analytics')
 def get_analytics():
-    """Get overall analytics with time range filter"""
+    """Get overall analytics with time range and campaign filter"""
     time_range = request.args.get('range', 'all')  # 24h, 7d, 30d, all
+    campaign_filter = request.args.get('campaign', '')
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -207,20 +208,30 @@ def get_analytics():
     elif time_range == '30d':
         time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '30 days'"
 
-    # Total links created
-    cur.execute('SELECT COUNT(*) as total_links FROM links')
+    # Add campaign filter
+    if campaign_filter:
+        if time_filter:
+            time_filter += f" AND l.campaign = '{campaign_filter}'"
+        else:
+            time_filter = f"WHERE l.campaign = '{campaign_filter}'"
+
+    # Total links created (with campaign filter)
+    if campaign_filter:
+        cur.execute(f"SELECT COUNT(*) as total_links FROM links WHERE campaign = '{campaign_filter}'")
+    else:
+        cur.execute('SELECT COUNT(*) as total_links FROM links')
     total_links = cur.fetchone()['total_links']
 
-    # Total clicks (with time filter)
+    # Total clicks (with time and campaign filter)
     if time_filter:
-        cur.execute(f'SELECT COUNT(*) as total_clicks FROM clicks c {time_filter}')
+        cur.execute(f'SELECT COUNT(*) as total_clicks FROM clicks c JOIN links l ON c.link_id = l.link_id {time_filter}')
     else:
         cur.execute('SELECT COUNT(*) as total_clicks FROM clicks')
     total_clicks = cur.fetchone()['total_clicks']
 
-    # Unique links clicked (with time filter)
+    # Unique links clicked (with time and campaign filter)
     if time_filter:
-        cur.execute(f'SELECT COUNT(DISTINCT link_id) as unique_clicks FROM clicks c {time_filter}')
+        cur.execute(f'SELECT COUNT(DISTINCT c.link_id) as unique_clicks FROM clicks c JOIN links l ON c.link_id = l.link_id {time_filter}')
     else:
         cur.execute('SELECT COUNT(DISTINCT link_id) as unique_clicks FROM clicks')
     unique_clicks = cur.fetchone()['unique_clicks']
@@ -330,6 +341,7 @@ def get_campaigns():
 def get_heatmap():
     """Get click heatmap data by day of week and hour"""
     time_range = request.args.get('range', 'all')  # 24h, 7d, 30d, all
+    campaign_filter = request.args.get('campaign', '')
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -337,18 +349,26 @@ def get_heatmap():
     # Build time filter
     time_filter = ""
     if time_range == '24h':
-        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '24 hours'"
+        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '24 hours'"
     elif time_range == '7d':
-        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '7 days'"
+        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '7 days'"
     elif time_range == '30d':
-        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '30 days'"
+        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '30 days'"
+
+    # Add campaign filter
+    if campaign_filter:
+        if time_filter:
+            time_filter += f" AND l.campaign = '{campaign_filter}'"
+        else:
+            time_filter = f"WHERE l.campaign = '{campaign_filter}'"
 
     query = f'''
         SELECT
-            EXTRACT(DOW FROM clicked_at) as day_of_week,
-            EXTRACT(HOUR FROM clicked_at) as hour,
+            EXTRACT(DOW FROM c.clicked_at) as day_of_week,
+            EXTRACT(HOUR FROM c.clicked_at) as hour,
             COUNT(*) as click_count
-        FROM clicks
+        FROM clicks c
+        JOIN links l ON c.link_id = l.link_id
         {time_filter}
         GROUP BY day_of_week, hour
         ORDER BY day_of_week, hour
@@ -366,6 +386,7 @@ def get_heatmap():
 def get_timeline():
     """Get clicks timeline for chart"""
     time_range = request.args.get('range', '7d')
+    campaign_filter = request.args.get('campaign', '')
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -382,17 +403,25 @@ def get_timeline():
 
     time_filter = ""
     if time_range == '24h':
-        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '24 hours'"
+        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '24 hours'"
     elif time_range == '7d':
-        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '7 days'"
+        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '7 days'"
     elif time_range == '30d':
-        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '30 days'"
+        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '30 days'"
+
+    # Add campaign filter
+    if campaign_filter:
+        if time_filter:
+            time_filter += f" AND l.campaign = '{campaign_filter}'"
+        else:
+            time_filter = f"WHERE l.campaign = '{campaign_filter}'"
 
     query = f'''
         SELECT
-            TO_CHAR(clicked_at, '{format_str}') as period,
+            TO_CHAR(c.clicked_at, '{format_str}') as period,
             COUNT(*) as clicks
-        FROM clicks
+        FROM clicks c
+        JOIN links l ON c.link_id = l.link_id
         {time_filter}
         GROUP BY period
         ORDER BY period
