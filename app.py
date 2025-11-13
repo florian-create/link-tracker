@@ -239,13 +239,13 @@ def get_analytics():
     # Click rate
     click_rate = (unique_clicks / total_links * 100) if total_links > 0 else 0
 
-    # Clicks by campaign (with time filter)
-    campaign_filter = time_filter.replace('c.', '') if time_filter else ''
+    # Clicks by campaign (with time filter) - need to adjust time_filter for this query
+    campaign_time_filter = time_filter.replace('WHERE c.', 'WHERE ').replace('c.clicked_at', 'c.clicked_at') if time_filter and 'WHERE c.' in time_filter else time_filter
     cur.execute(f'''
         SELECT l.campaign, COUNT(c.id) as clicks
         FROM links l
         LEFT JOIN clicks c ON l.link_id = c.link_id
-        {campaign_filter}
+        {campaign_time_filter}
         GROUP BY l.campaign
         ORDER BY clicks DESC
     ''')
@@ -264,10 +264,11 @@ def get_analytics():
     recent_clicks = cur.fetchall()
 
     # Geographic distribution (with time filter)
+    geo_time_filter = time_filter.replace('WHERE c.', 'WHERE ').replace(' AND l.campaign', ' AND c.id IN (SELECT c2.id FROM clicks c2 JOIN links l ON c2.link_id = l.link_id WHERE l.campaign') if time_filter else ''
     cur.execute(f'''
         SELECT country, COUNT(*) as clicks
         FROM clicks c
-        {time_filter}
+        {time_filter if not campaign_filter else 'WHERE c.link_id IN (SELECT link_id FROM links WHERE campaign = \'' + campaign_filter + '\')' + (' AND ' + time_filter.replace('WHERE ', '') if time_filter else '')}
         GROUP BY country
         ORDER BY clicks DESC
         LIMIT 10
@@ -393,25 +394,21 @@ def get_timeline():
 
     # Configure based on time range
     if time_range == '24h':
-        interval = '1 hour'
+        start_interval = '24 hours'
+        step_interval = '1 hour'
         format_str = 'YYYY-MM-DD HH24:00'
-        periods_back = 24
-        date_interval = "'1 hour'"
     elif time_range == '7d':
-        interval = '1 day'
+        start_interval = '7 days'
+        step_interval = '1 day'
         format_str = 'YYYY-MM-DD'
-        periods_back = 7
-        date_interval = "'1 day'"
     elif time_range == '30d':
-        interval = '1 day'
+        start_interval = '30 days'
+        step_interval = '1 day'
         format_str = 'YYYY-MM-DD'
-        periods_back = 30
-        date_interval = "'1 day'"
     else:  # 'all'
-        interval = '1 day'
+        start_interval = '90 days'
+        step_interval = '1 day'
         format_str = 'YYYY-MM-DD'
-        periods_back = 90  # Show last 90 days for 'all'
-        date_interval = "'1 day'"
 
     # Build campaign join condition
     campaign_condition = ""
@@ -422,9 +419,9 @@ def get_timeline():
     query = f'''
         WITH time_series AS (
             SELECT generate_series(
-                NOW() - INTERVAL '{periods_back} {interval}',
+                NOW() - INTERVAL '{start_interval}',
                 NOW(),
-                INTERVAL {date_interval}
+                INTERVAL '{step_interval}'
             ) AS period_time
         )
         SELECT
