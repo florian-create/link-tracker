@@ -406,6 +406,33 @@ def get_timeline():
 
     return jsonify(timeline_data)
 
+@app.route('/api/links/<link_id>', methods=['DELETE'])
+def delete_link(link_id):
+    """Delete a link and all its associated clicks"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # Delete clicks first (foreign key constraint)
+        cur.execute('DELETE FROM clicks WHERE link_id = %s', (link_id,))
+
+        # Then delete the link
+        cur.execute('DELETE FROM links WHERE link_id = %s', (link_id,))
+
+        conn.commit()
+
+        if cur.rowcount == 0:
+            return jsonify({'error': 'Link not found'}), 404
+
+        return jsonify({'success': True, 'message': 'Link deleted'}), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
 # Dashboard HTML Template
 DASHBOARD_HTML = '''
 <!DOCTYPE html>
