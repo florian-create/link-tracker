@@ -159,41 +159,45 @@
 
         .heatmap-grid {
             display: grid;
-            grid-template-columns: 35px repeat(7, 1fr);
+            grid-template-columns: 25px repeat(7, 1fr);
             gap: 1px;
-            margin-top: 1rem;
-            max-width: 400px;
+            margin-top: 0.5rem;
+            max-width: 350px;
+            font-size: 0.5rem;
         }
 
         .heatmap-label {
-            font-size: 0.65rem;
+            font-size: 0.5rem;
             color: #666;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding-right: 0.3rem;
+            padding-right: 0.2rem;
+            line-height: 1;
         }
 
         .heatmap-day {
-            font-size: 0.65rem;
+            font-size: 0.5rem;
             color: #666;
             text-align: center;
-            padding: 0.25rem 0;
+            padding: 0.15rem 0;
             font-weight: 600;
+            line-height: 1;
         }
 
         .heatmap-cell {
-            aspect-ratio: 1;
+            width: 100%;
+            height: 8px;
             background: #1a1a1a;
-            border-radius: 2px;
+            border-radius: 1px;
             cursor: pointer;
             transition: all 0.15s;
         }
 
         .heatmap-cell:hover {
-            transform: scale(1.2);
+            transform: scale(1.3);
             z-index: 10;
-            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.4);
         }
 
         .table-card {
