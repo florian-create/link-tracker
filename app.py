@@ -388,6 +388,7 @@ def get_timeline():
     """Get clicks timeline for chart"""
     time_range = request.args.get('range', '7d')
     campaign_filter = request.args.get('campaign', '')
+    # Force rebuild
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
