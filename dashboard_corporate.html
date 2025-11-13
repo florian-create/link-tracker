@@ -159,9 +159,10 @@
 
         .heatmap-grid {
             display: grid;
-            grid-template-columns: 50px repeat(24, 1fr);
-            gap: 2px;
+            grid-template-columns: 50px repeat(7, 1fr);
+            gap: 3px;
             margin-top: 1rem;
+            max-width: 800px;
         }
 
         .heatmap-label {
@@ -170,27 +171,30 @@
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding-right: 0.5rem;
+            padding-right: 0.75rem;
         }
 
-        .heatmap-hour {
-            font-size: 0.7rem;
+        .heatmap-day {
+            font-size: 0.75rem;
             color: #666;
             text-align: center;
-            padding: 0.25rem;
+            padding: 0.5rem 0.25rem;
+            font-weight: 600;
         }
 
         .heatmap-cell {
             aspect-ratio: 1;
             background: #1a1a1a;
-            border-radius: 2px;
+            border-radius: 3px;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s;
+            border: 1px solid #0a0a0a;
         }
 
         .heatmap-cell:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
             z-index: 10;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
         }
 
         .table-card {
@@ -644,15 +648,16 @@
 
         // Render heatmap
         function renderHeatmap(data) {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const dayIndices = [1, 2, 3, 4, 5, 6, 0]; // Map to actual day_of_week values
             const hours = Array.from({length: 24}, (_, i) => i);
 
             // Create matrix
             const matrix = {};
-            days.forEach((day, dayIndex) => {
-                matrix[dayIndex] = {};
-                hours.forEach(hour => {
-                    matrix[dayIndex][hour] = 0;
+            hours.forEach(hour => {
+                matrix[hour] = {};
+                dayIndices.forEach(dayIndex => {
+                    matrix[hour][dayIndex] = 0;
                 });
             });
 
@@ -660,11 +665,34 @@
             data.forEach(item => {
                 const day = parseInt(item.day_of_week);
                 const hour = parseInt(item.hour);
-                matrix[day][hour] = parseInt(item.click_count);
+                if (!matrix[hour]) matrix[hour] = {};
+                matrix[hour][day] = parseInt(item.click_count);
             });
 
             // Find max for scaling
             const maxClicks = Math.max(...data.map(d => parseInt(d.click_count)), 1);
+
+            // Color gradient function: white -> yellow -> red
+            function getHeatColor(intensity) {
+                if (intensity === 0) return '#1a1a1a'; // Dark background for 0
+
+                // White (low) -> Yellow (medium) -> Red (high)
+                if (intensity < 0.5) {
+                    // White to Yellow
+                    const ratio = intensity * 2; // 0 to 1
+                    const r = 255;
+                    const g = 255;
+                    const b = Math.round(255 * (1 - ratio));
+                    return `rgb(${r}, ${g}, ${b})`;
+                } else {
+                    // Yellow to Red
+                    const ratio = (intensity - 0.5) * 2; // 0 to 1
+                    const r = 255;
+                    const g = Math.round(255 * (1 - ratio));
+                    const b = 0;
+                    return `rgb(${r}, ${g}, ${b})`;
+                }
+            }
 
             // Build HTML
             let html = '<div class="heatmap-grid">';
@@ -672,20 +700,19 @@
             // Empty cell for top-left corner
             html += '<div></div>';
 
-            // Hour headers
-            hours.forEach(hour => {
-                html += `<div class="heatmap-hour">${hour}</div>`;
+            // Day headers (horizontal)
+            days.forEach(day => {
+                html += `<div class="heatmap-day">${day}</div>`;
             });
 
-            // Rows
-            days.forEach((day, dayIndex) => {
-                html += `<div class="heatmap-label">${day}</div>`;
-                hours.forEach(hour => {
-                    const count = matrix[dayIndex][hour];
+            // Rows (hours in vertical)
+            hours.forEach(hour => {
+                html += `<div class="heatmap-label">${hour}:00</div>`;
+                dayIndices.forEach(dayIndex => {
+                    const count = matrix[hour][dayIndex] || 0;
                     const intensity = count / maxClicks;
-                    const alpha = 0.1 + (intensity * 0.9);
-                    const color = `rgba(255, 255, 255, ${alpha})`;
-                    html += `<div class="heatmap-cell" style="background: ${color}" title="${day} ${hour}:00 - ${count} clicks"></div>`;
+                    const color = getHeatColor(intensity);
+                    html += `<div class="heatmap-cell" style="background: ${color}" title="${days[dayIndices.indexOf(dayIndex)]} ${hour}:00 - ${count} clicks"></div>`;
                 });
             });
 
