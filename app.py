@@ -264,15 +264,24 @@ def get_analytics():
     recent_clicks = cur.fetchall()
 
     # Geographic distribution (with time filter)
-    geo_time_filter = time_filter.replace('WHERE c.', 'WHERE ').replace(' AND l.campaign', ' AND c.id IN (SELECT c2.id FROM clicks c2 JOIN links l ON c2.link_id = l.link_id WHERE l.campaign') if time_filter else ''
-    cur.execute(f'''
+    geo_query = '''
         SELECT country, COUNT(*) as clicks
         FROM clicks c
-        {time_filter if not campaign_filter else 'WHERE c.link_id IN (SELECT link_id FROM links WHERE campaign = \'' + campaign_filter + '\')' + (' AND ' + time_filter.replace('WHERE ', '') if time_filter else '')}
+    '''
+    if campaign_filter:
+        geo_query += f" WHERE c.link_id IN (SELECT link_id FROM links WHERE campaign = '{campaign_filter}')"
+        if time_filter:
+            geo_query += f" AND {time_filter.replace('WHERE ', '')}"
+    else:
+        geo_query += f" {time_filter}"
+
+    geo_query += '''
         GROUP BY country
         ORDER BY clicks DESC
         LIMIT 10
-    ''')
+    '''
+
+    cur.execute(geo_query)
     geo_data = cur.fetchall()
 
     cur.close()
