@@ -98,7 +98,11 @@ def get_geo_info(ip):
 @app.route('/')
 def index():
     """Dashboard homepage"""
-    return render_template_string(DASHBOARD_HTML)
+    try:
+        with open('dashboard_corporate.html', 'r') as f:
+            return f.read()
+    except:
+        return render_template_string(DASHBOARD_HTML)
 
 @app.route('/api/create-link', methods=['POST'])
 def create_link():
@@ -187,45 +191,76 @@ def redirect_link(link_id):
 
 @app.route('/api/analytics')
 def get_analytics():
-    """Get overall analytics"""
+    """Get overall analytics with time range filter"""
+    time_range = request.args.get('range', 'all')  # 24h, 7d, 30d, all
+
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    # Build time filter for clicks
+    time_filter = ""
+    if time_range == '24h':
+        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '24 hours'"
+    elif time_range == '7d':
+        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '7 days'"
+    elif time_range == '30d':
+        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '30 days'"
 
     # Total links created
     cur.execute('SELECT COUNT(*) as total_links FROM links')
     total_links = cur.fetchone()['total_links']
 
-    # Total clicks
-    cur.execute('SELECT COUNT(*) as total_clicks FROM clicks')
+    # Total clicks (with time filter)
+    if time_filter:
+        cur.execute(f'SELECT COUNT(*) as total_clicks FROM clicks c {time_filter}')
+    else:
+        cur.execute('SELECT COUNT(*) as total_clicks FROM clicks')
     total_clicks = cur.fetchone()['total_clicks']
 
-    # Unique links clicked
-    cur.execute('SELECT COUNT(DISTINCT link_id) as unique_clicks FROM clicks')
+    # Unique links clicked (with time filter)
+    if time_filter:
+        cur.execute(f'SELECT COUNT(DISTINCT link_id) as unique_clicks FROM clicks c {time_filter}')
+    else:
+        cur.execute('SELECT COUNT(DISTINCT link_id) as unique_clicks FROM clicks')
     unique_clicks = cur.fetchone()['unique_clicks']
 
     # Click rate
     click_rate = (unique_clicks / total_links * 100) if total_links > 0 else 0
 
-    # Clicks by campaign
-    cur.execute('''
+    # Clicks by campaign (with time filter)
+    campaign_filter = time_filter.replace('c.', '') if time_filter else ''
+    cur.execute(f'''
         SELECT l.campaign, COUNT(c.id) as clicks
         FROM links l
         LEFT JOIN clicks c ON l.link_id = c.link_id
+        {campaign_filter}
         GROUP BY l.campaign
         ORDER BY clicks DESC
     ''')
     campaigns = cur.fetchall()
 
-    # Recent clicks
-    cur.execute('''
+    # Recent clicks (with time filter)
+    cur.execute(f'''
         SELECT l.first_name, l.last_name, l.email, l.campaign,
                c.clicked_at, c.country, c.city
         FROM clicks c
         JOIN links l ON c.link_id = l.link_id
+        {time_filter}
         ORDER BY c.clicked_at DESC
         LIMIT 10
     ''')
     recent_clicks = cur.fetchall()
+
+    # Geographic distribution (with time filter)
+    cur.execute(f'''
+        SELECT country, COUNT(*) as clicks
+        FROM clicks c
+        {time_filter}
+        GROUP BY country
+        ORDER BY clicks DESC
+        LIMIT 10
+    ''')
+    geo_data = cur.fetchall()
 
     cur.close()
     conn.close()
@@ -236,7 +271,8 @@ def get_analytics():
         'unique_clicks': unique_clicks,
         'click_rate': round(click_rate, 2),
         'campaigns': campaigns,
-        'recent_clicks': recent_clicks
+        'recent_clicks': recent_clicks,
+        'geo_data': geo_data
     })
 
 @app.route('/api/clicks')
@@ -288,6 +324,86 @@ def get_campaigns():
     conn.close()
 
     return jsonify([c['campaign'] for c in campaigns])
+
+@app.route('/api/heatmap')
+def get_heatmap():
+    """Get click heatmap data by day of week and hour"""
+    time_range = request.args.get('range', 'all')  # 24h, 7d, 30d, all
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    # Build time filter
+    time_filter = ""
+    if time_range == '24h':
+        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '24 hours'"
+    elif time_range == '7d':
+        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '7 days'"
+    elif time_range == '30d':
+        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '30 days'"
+
+    query = f'''
+        SELECT
+            EXTRACT(DOW FROM clicked_at) as day_of_week,
+            EXTRACT(HOUR FROM clicked_at) as hour,
+            COUNT(*) as click_count
+        FROM clicks
+        {time_filter}
+        GROUP BY day_of_week, hour
+        ORDER BY day_of_week, hour
+    '''
+
+    cur.execute(query)
+    heatmap_data = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return jsonify(heatmap_data)
+
+@app.route('/api/analytics/timeline')
+def get_timeline():
+    """Get clicks timeline for chart"""
+    time_range = request.args.get('range', '7d')
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    if time_range == '24h':
+        interval = '1 hour'
+        format_str = 'YYYY-MM-DD HH24:00'
+    elif time_range == '7d':
+        interval = '1 day'
+        format_str = 'YYYY-MM-DD'
+    else:  # 30d
+        interval = '1 day'
+        format_str = 'YYYY-MM-DD'
+
+    time_filter = ""
+    if time_range == '24h':
+        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '24 hours'"
+    elif time_range == '7d':
+        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '7 days'"
+    elif time_range == '30d':
+        time_filter = "WHERE clicked_at >= NOW() - INTERVAL '30 days'"
+
+    query = f'''
+        SELECT
+            TO_CHAR(clicked_at, '{format_str}') as period,
+            COUNT(*) as clicks
+        FROM clicks
+        {time_filter}
+        GROUP BY period
+        ORDER BY period
+    '''
+
+    cur.execute(query)
+    timeline_data = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return jsonify(timeline_data)
 
 # Dashboard HTML Template
 DASHBOARD_HTML = '''

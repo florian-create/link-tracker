@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Tracker - Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e5e5e5;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: #111;
+            border-bottom: 1px solid #222;
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .time-filter {
+            display: flex;
+            gap: 0.5rem;
+            background: #1a1a1a;
+            padding: 0.25rem;
+            border-radius: 4px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .time-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .time-btn:hover {
+            color: #fff;
+            background: #252525;
+        }
+
+        .time-btn.active {
+            background: #333;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #111;
+            border: 1px solid #222;
+            padding: 1.5rem;
+            border-radius: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .stat-change {
+            font-size: 0.875rem;
+            color: #4ade80;
+            margin-top: 0.5rem;
+        }
+
+        .stat-change.negative {
+            color: #ef4444;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .heatmap-card {
+            grid-column: 1 / -1;
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: 50px repeat(24, 1fr);
+            gap: 2px;
+            margin-top: 1rem;
+        }
+
+        .heatmap-label {
+            font-size: 0.75rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 0.5rem;
+        }
+
+        .heatmap-hour {
+            font-size: 0.7rem;
+            color: #666;
+            text-align: center;
+            padding: 0.25rem;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            background: #1a1a1a;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .table-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #222;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 3px;
+            font-size: 0.875rem;
+            color: #e5e5e5;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .export-btn {
+            padding: 0.5rem 1.25rem;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .export-btn:hover {
+            background: #e5e5e5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #0a0a0a;
+        }
+
+        th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: #888;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #222;
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #1a1a1a;
+            font-size: 0.875rem;
+        }
+
+        tbody tr:hover {
+            background: #0f0f0f;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #14532d;
+            color: #4ade80;
+        }
+
+        .badge-gray {
+            background: #1a1a1a;
+            color: #666;
+        }
+
+        .badge-campaign {
+            background: #1a1a2e;
+            color: #60a5fa;
+        }
+
+        .click-count {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .geo-list {
+            list-style: none;
+        }
+
+        .geo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .geo-item:last-child {
+            border-bottom: none;
+        }
+
+        .geo-country {
+            font-size: 0.875rem;
+            color: #e5e5e5;
+        }
+
+        .geo-bar {
+            flex: 1;
+            height: 4px;
+            background: #1a1a1a;
+            margin: 0 1rem;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .geo-bar-fill {
+            height: 100%;
+            background: #fff;
+            border-radius: 2px;
+        }
+
+        .geo-count {
+            font-size: 0.875rem;
+            color: #888;
+            font-weight: 600;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        @media (max-width: 1024px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">LINK TRACKER</div>
+            <div class="time-filter">
+                <button class="time-btn" data-range="24h">24H</button>
+                <button class="time-btn" data-range="7d">7D</button>
+                <button class="time-btn active" data-range="30d">30D</button>
+                <button class="time-btn" data-range="all">ALL</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="loading">Loading...</div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Click Timeline</div>
+                </div>
+                <canvas id="timelineChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Geographic Distribution</div>
+                </div>
+                <ul class="geo-list" id="geoList">
+                    <li class="loading">Loading...</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Heatmap -->
+        <div class="heatmap-card">
+            <div class="chart-header">
+                <div class="chart-title">Click Activity Heatmap</div>
+            </div>
+            <div id="heatmapContainer">
+                <div class="loading">Loading heatmap...</div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-card">
+            <div class="table-header">
+                <h2 class="table-title">Click Details</h2>
+                <div class="table-actions">
+                    <select class="filter-select" id="campaignFilter">
+                        <option value="">All Campaigns</option>
+                    </select>
+                    <button class="export-btn" onclick="exportCSV()">EXPORT CSV</button>
+                </div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Campaign</th>
+                            <th>Clicks</th>
+                            <th>First Click</th>
+                            <th>Last Click</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clicksTable">
+                        <tr><td colspan="7" class="loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRange = '30d';
+        let allClicks = [];
+        let timelineChart = null;
+
+        // Time filter buttons
+        document.querySelectorAll('.time-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentRange = btn.dataset.range;
+                loadAllData();
+            });
+        });
+
+        // Load all data
+        async function loadAllData() {
+            await Promise.all([
+                loadAnalytics(),
+                loadTimeline(),
+                loadHeatmap(),
+                loadClicks(),
+                loadCampaigns()
+            ]);
+        }
+
+        // Load analytics
+        async function loadAnalytics() {
+            try {
+                const response = await fetch(`/api/analytics?range=${currentRange}`);
+                const data = await response.json();
+
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-label">Total Links</div>
+                        <div class="stat-value">${data.total_links.toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Clicks</div>
+                        <div class="stat-value">${data.total_clicks.toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Unique Visitors</div>
+                        <div class="stat-value">${data.unique_clicks.toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Click Rate</div>
+                        <div class="stat-value">${data.click_rate}%</div>
+                    </div>
+                `;
+
+                // Update geo data
+                renderGeoData(data.geo_data);
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        // Render geographic data
+        function renderGeoData(geoData) {
+            const maxClicks = Math.max(...geoData.map(g => g.clicks), 1);
+            const html = geoData.map(geo => `
+                <li class="geo-item">
+                    <span class="geo-country">${geo.country}</span>
+                    <div class="geo-bar">
+                        <div class="geo-bar-fill" style="width: ${(geo.clicks / maxClicks) * 100}%"></div>
+                    </div>
+                    <span class="geo-count">${geo.clicks}</span>
+                </li>
+            `).join('');
+            document.getElementById('geoList').innerHTML = html || '<li class="loading">No data</li>';
+        }
+
+        // Load timeline
+        async function loadTimeline() {
+            try {
+                const response = await fetch(`/api/analytics/timeline?range=${currentRange}`);
+                const data = await response.json();
+
+                const ctx = document.getElementById('timelineChart');
+
+                if (timelineChart) {
+                    timelineChart.destroy();
+                }
+
+                timelineChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.period),
+                        datasets: [{
+                            label: 'Clicks',
+                            data: data.map(d => d.clicks),
+                            borderColor: '#fff',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: '#222'
+                                },
+                                ticks: {
+                                    color: '#888'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: '#222'
+                                },
+                                ticks: {
+                                    color: '#888'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading timeline:', error);
+            }
+        }
+
+        // Load heatmap
+        async function loadHeatmap() {
+            try {
+                const response = await fetch(`/api/heatmap?range=${currentRange}`);
+                const data = await response.json();
+
+                renderHeatmap(data);
+            } catch (error) {
+                console.error('Error loading heatmap:', error);
+            }
+        }
+
+        // Render heatmap
+        function renderHeatmap(data) {
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const hours = Array.from({length: 24}, (_, i) => i);
+
+            // Create matrix
+            const matrix = {};
+            days.forEach((day, dayIndex) => {
+                matrix[dayIndex] = {};
+                hours.forEach(hour => {
+                    matrix[dayIndex][hour] = 0;
+                });
+            });
+
+            // Fill with data
+            data.forEach(item => {
+                const day = parseInt(item.day_of_week);
+                const hour = parseInt(item.hour);
+                matrix[day][hour] = parseInt(item.click_count);
+            });
+
+            // Find max for scaling
+            const maxClicks = Math.max(...data.map(d => parseInt(d.click_count)), 1);
+
+            // Build HTML
+            let html = '<div class="heatmap-grid">';
+
+            // Empty cell for top-left corner
+            html += '<div></div>';
+
+            // Hour headers
+            hours.forEach(hour => {
+                html += `<div class="heatmap-hour">${hour}</div>`;
+            });
+
+            // Rows
+            days.forEach((day, dayIndex) => {
+                html += `<div class="heatmap-label">${day}</div>`;
+                hours.forEach(hour => {
+                    const count = matrix[dayIndex][hour];
+                    const intensity = count / maxClicks;
+                    const alpha = 0.1 + (intensity * 0.9);
+                    const color = `rgba(255, 255, 255, ${alpha})`;
+                    html += `<div class="heatmap-cell" style="background: ${color}" title="${day} ${hour}:00 - ${count} clicks"></div>`;
+                });
+            });
+
+            html += '</div>';
+            document.getElementById('heatmapContainer').innerHTML = html;
+        }
+
+        // Load clicks
+        async function loadClicks(campaign = '') {
+            try {
+                const url = campaign ? `/api/clicks?campaign=${campaign}` : '/api/clicks';
+                const response = await fetch(url);
+                allClicks = await response.json();
+
+                renderClicksTable(allClicks);
+            } catch (error) {
+                console.error('Error loading clicks:', error);
+            }
+        }
+
+        // Render clicks table
+        function renderClicksTable(clicks) {
+            const tbody = document.getElementById('clicksTable');
+
+            if (clicks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="loading">No data</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = clicks.map(click => `
+                <tr>
+                    <td><strong>${click.first_name} ${click.last_name}</strong></td>
+                    <td>${click.email || '-'}</td>
+                    <td><span class="badge badge-campaign">${click.campaign}</span></td>
+                    <td><span class="click-count">${click.click_count}</span></td>
+                    <td>${click.first_clicked ? formatDate(click.first_clicked) : '-'}</td>
+                    <td>${click.last_clicked ? formatDate(click.last_clicked) : '-'}</td>
+                    <td>${click.click_count > 0 ? '<span class="badge badge-success">Clicked</span>' : '<span class="badge badge-gray">Not clicked</span>'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Load campaigns
+        async function loadCampaigns() {
+            try {
+                const response = await fetch('/api/campaigns');
+                const campaigns = await response.json();
+
+                const select = document.getElementById('campaignFilter');
+                campaigns.forEach(campaign => {
+                    const option = document.createElement('option');
+                    option.value = campaign;
+                    option.textContent = campaign;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading campaigns:', error);
+            }
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Export CSV
+        function exportCSV() {
+            const headers = ['First Name', 'Last Name', 'Email', 'Campaign', 'Clicks', 'First Click', 'Last Click', 'Status'];
+            const rows = allClicks.map(click => [
+                click.first_name,
+                click.last_name,
+                click.email || '',
+                click.campaign,
+                click.click_count,
+                click.first_clicked ? formatDate(click.first_clicked) : '',
+                click.last_clicked ? formatDate(click.last_clicked) : '',
+                click.click_count > 0 ? 'Clicked' : 'Not clicked'
+            ]);
+
+            const csv = [headers, ...rows].map(row => row.join(',')).join('\\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `clicks_export_${Date.now()}.csv`;
+            a.click();
+        }
+
+        // Campaign filter
+        document.getElementById('campaignFilter').addEventListener('change', (e) => {
+            loadClicks(e.target.value);
+        });
+
+        // Initial load
+        loadAllData();
+
+        // Auto refresh every 30s
+        setInterval(loadAllData, 30000);
+    </script>
+</body>
+</html>
