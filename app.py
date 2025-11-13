@@ -138,11 +138,8 @@ def create_link():
         conn.commit()
 
         # Use custom domain if available
-        custom_domain = os.environ.get('CUSTOM_DOMAIN', '')
-        if custom_domain:
-            base_url = f"https://{custom_domain}"
-        else:
-            base_url = request.host_url.rstrip('/')
+        custom_domain = os.getenv('CUSTOM_DOMAIN', 'agence.aura.camp')
+        base_url = f"https://{custom_domain}"
         short_url = f"{base_url}/c/{link_id}"
 
         return jsonify({
