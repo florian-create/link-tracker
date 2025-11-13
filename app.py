@@ -137,8 +137,12 @@ def create_link():
 
         conn.commit()
 
-        # Get base URL from request
-        base_url = request.host_url.rstrip('/')
+        # Use custom domain if available
+        custom_domain = os.environ.get('CUSTOM_DOMAIN', '')
+        if custom_domain:
+            base_url = f"https://{custom_domain}"
+        else:
+            base_url = request.host_url.rstrip('/')
         short_url = f"{base_url}/c/{link_id}"
 
         return jsonify({
