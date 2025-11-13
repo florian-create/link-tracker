@@ -441,13 +441,22 @@
             </div>
         </div>
 
-        <!-- Heatmap -->
-        <div class="heatmap-card">
-            <div class="chart-header">
-                <div class="chart-title">Click Activity Heatmap</div>
+        <!-- Heatmap and Sankey -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="heatmap-card">
+                <div class="chart-header">
+                    <div class="chart-title">Click Activity Heatmap</div>
+                </div>
+                <div id="heatmapContainer">
+                    <div class="loading">Loading heatmap...</div>
+                </div>
             </div>
-            <div id="heatmapContainer">
-                <div class="loading">Loading heatmap...</div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Conversion Funnel</div>
+                </div>
+                <canvas id="sankeyChart" height="300"></canvas>
             </div>
         </div>
 
@@ -514,6 +523,8 @@
             ]);
         }
 
+        let sankeyChart = null;
+
         // Load analytics
         async function loadAnalytics() {
             try {
@@ -545,9 +556,98 @@
 
                 // Update geo data
                 renderGeoData(data.geo_data);
+
+                // Update Sankey chart
+                renderSankey(data.total_links, data.total_clicks, data.unique_clicks);
             } catch (error) {
                 console.error('Error loading analytics:', error);
             }
+        }
+
+        // Render Sankey (funnel visualization)
+        function renderSankey(totalLinks, totalClicks, uniqueVisitors) {
+            const ctx = document.getElementById('sankeyChart');
+
+            if (sankeyChart) {
+                sankeyChart.destroy();
+            }
+
+            // Calculate percentages
+            const clickRate = totalLinks > 0 ? (totalClicks / totalLinks * 100) : 0;
+            const uniqueRate = totalClicks > 0 ? (uniqueVisitors / totalClicks * 100) : 0;
+
+            // Create a horizontal funnel chart
+            sankeyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Total Links', 'Total Clicks', 'Unique Visitors'],
+                    datasets: [{
+                        label: 'Funnel',
+                        data: [totalLinks, totalClicks, uniqueVisitors],
+                        backgroundColor: [
+                            'rgba(100, 116, 234, 0.8)',
+                            'rgba(255, 206, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(100, 116, 234, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.parsed.x || 0;
+                                    let percentage = '';
+
+                                    if (context.dataIndex === 1 && totalLinks > 0) {
+                                        percentage = ` (${clickRate.toFixed(1)}%)`;
+                                    } else if (context.dataIndex === 2 && totalClicks > 0) {
+                                        percentage = ` (${uniqueRate.toFixed(1)}%)`;
+                                    }
+
+                                    return label + ': ' + value + percentage;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#222'
+                            },
+                            ticks: {
+                                color: '#888'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#fff',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         // Render geographic data
