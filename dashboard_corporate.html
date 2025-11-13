@@ -141,6 +141,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
+            min-height: 21px;
         }
 
         .chart-title {
@@ -149,14 +150,16 @@
             color: #fff;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            line-height: 1.2;
         }
 
         .heatmap-card {
-            grid-column: 1 / -1;
             background: #111;
             border: 1px solid #222;
             border-radius: 4px;
             padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
         }
 
         .heatmap-grid {
@@ -494,8 +497,8 @@
         </div>
 
         <!-- Heatmap and Sankey -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start;">
-            <div class="heatmap-card">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="chart-card">
                 <div class="chart-header">
                     <div class="chart-title">Click Activity Heatmap</div>
                 </div>
@@ -504,11 +507,11 @@
                 </div>
             </div>
 
-            <div class="chart-card" style="display: flex; flex-direction: column;">
+            <div class="chart-card">
                 <div class="chart-header">
                     <div class="chart-title">Conversion Funnel</div>
                 </div>
-                <div id="sankeyChart" style="flex: 1;"></div>
+                <div id="sankeyChart"></div>
                 <div class="sankey-tooltip" id="sankeyTooltip"></div>
             </div>
         </div>
