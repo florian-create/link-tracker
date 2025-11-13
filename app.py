@@ -391,40 +391,51 @@ def get_timeline():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
+    # Configure based on time range
     if time_range == '24h':
         interval = '1 hour'
         format_str = 'YYYY-MM-DD HH24:00'
+        periods_back = 24
+        date_interval = "'1 hour'"
     elif time_range == '7d':
         interval = '1 day'
         format_str = 'YYYY-MM-DD'
-    else:  # 30d
-        interval = '1 day'
-        format_str = 'YYYY-MM-DD'
-
-    time_filter = ""
-    if time_range == '24h':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '24 hours'"
-    elif time_range == '7d':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '7 days'"
+        periods_back = 7
+        date_interval = "'1 day'"
     elif time_range == '30d':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '30 days'"
+        interval = '1 day'
+        format_str = 'YYYY-MM-DD'
+        periods_back = 30
+        date_interval = "'1 day'"
+    else:  # 'all'
+        interval = '1 day'
+        format_str = 'YYYY-MM-DD'
+        periods_back = 90  # Show last 90 days for 'all'
+        date_interval = "'1 day'"
 
-    # Add campaign filter
+    # Build campaign join condition
+    campaign_condition = ""
     if campaign_filter:
-        if time_filter:
-            time_filter += f" AND l.campaign = '{campaign_filter}'"
-        else:
-            time_filter = f"WHERE l.campaign = '{campaign_filter}'"
+        campaign_condition = f"AND l.campaign = '{campaign_filter}'"
 
+    # Generate all periods and LEFT JOIN clicks
     query = f'''
+        WITH time_series AS (
+            SELECT generate_series(
+                NOW() - INTERVAL '{periods_back} {interval}',
+                NOW(),
+                INTERVAL {date_interval}
+            ) AS period_time
+        )
         SELECT
-            TO_CHAR(c.clicked_at, '{format_str}') as period,
-            COUNT(*) as clicks
-        FROM clicks c
-        JOIN links l ON c.link_id = l.link_id
-        {time_filter}
-        GROUP BY period
-        ORDER BY period
+            TO_CHAR(ts.period_time, '{format_str}') as period,
+            COALESCE(COUNT(c.id), 0) as clicks
+        FROM time_series ts
+        LEFT JOIN clicks c ON TO_CHAR(c.clicked_at, '{format_str}') = TO_CHAR(ts.period_time, '{format_str}')
+        LEFT JOIN links l ON c.link_id = l.link_id
+        WHERE 1=1 {campaign_condition}
+        GROUP BY period, ts.period_time
+        ORDER BY ts.period_time
     '''
 
     cur.execute(query)
