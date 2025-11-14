@@ -55,6 +55,7 @@ def init_db():
             first_name VARCHAR(255),
             last_name VARCHAR(255),
             email VARCHAR(255),
+            icp VARCHAR(255),
             campaign VARCHAR(255),
             destination_url TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -119,6 +120,7 @@ def create_link():
     first_name = data.get('first_name', '')
     last_name = data.get('last_name', '')
     email = data.get('email', '')
+    icp = data.get('ICP', data.get('icp', ''))  # Support both ICP and icp
     campaign = data.get('campaign', 'default')
     destination_url = data.get('destination_url')
 
@@ -131,9 +133,9 @@ def create_link():
 
     try:
         cur.execute('''
-            INSERT INTO links (link_id, first_name, last_name, email, campaign, destination_url)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        ''', (link_id, first_name, last_name, email, campaign, destination_url))
+            INSERT INTO links (link_id, first_name, last_name, email, icp, campaign, destination_url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ''', (link_id, first_name, last_name, email, icp, campaign, destination_url))
 
         conn.commit()
 
@@ -316,6 +318,7 @@ def get_clicks():
             l.first_name,
             l.last_name,
             l.email,
+            l.icp,
             l.campaign,
             l.created_at,
             COUNT(c.id) as click_count,
@@ -327,9 +330,9 @@ def get_clicks():
 
     if campaign:
         query += ' WHERE l.campaign = %s'
-        cur.execute(query + ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.campaign, l.created_at ORDER BY click_count DESC', (campaign,))
+        cur.execute(query + ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at ORDER BY click_count DESC', (campaign,))
     else:
-        cur.execute(query + ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.campaign, l.created_at ORDER BY click_count DESC')
+        cur.execute(query + ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at ORDER BY click_count DESC')
 
     clicks = cur.fetchall()
 
@@ -351,6 +354,49 @@ def get_campaigns():
     conn.close()
 
     return jsonify([c['campaign'] for c in campaigns])
+
+@app.route('/api/icp-stats')
+def get_icp_stats():
+    """Get ICP distribution for links that have been clicked"""
+    time_range = request.args.get('range', 'all')
+    campaign_filter = request.args.get('campaign', '')
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    # Build time filter for clicks
+    time_filter = ""
+    if time_range == '24h':
+        time_filter = "AND c.clicked_at >= NOW() - INTERVAL '24 hours'"
+    elif time_range == '7d':
+        time_filter = "AND c.clicked_at >= NOW() - INTERVAL '7 days'"
+    elif time_range == '30d':
+        time_filter = "AND c.clicked_at >= NOW() - INTERVAL '30 days'"
+
+    # Build campaign filter
+    campaign_condition = ""
+    if campaign_filter:
+        campaign_condition = f"AND l.campaign = '{campaign_filter}'"
+
+    # Get ICP distribution for clicked links only
+    query = f'''
+        SELECT
+            COALESCE(NULLIF(l.icp, ''), 'Non défini') as icp,
+            COUNT(DISTINCT l.link_id) as click_count
+        FROM links l
+        INNER JOIN clicks c ON l.link_id = c.link_id
+        WHERE 1=1 {time_filter} {campaign_condition}
+        GROUP BY l.icp
+        ORDER BY click_count DESC
+    '''
+
+    cur.execute(query)
+    icp_stats = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return jsonify(icp_stats)
 
 @app.route('/api/heatmap')
 def get_heatmap():

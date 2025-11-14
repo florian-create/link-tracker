@@ -533,7 +533,7 @@
         </div>
 
         <!-- Heatmap and Sankey -->
-        <div style="display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 1.5rem; margin-bottom: 1.5rem;">
             <div class="chart-card" style="min-height: 700px; display: flex; flex-direction: column; width: fit-content;">
                 <div class="chart-header">
                     <div class="chart-title">Click Activity Heatmap</div>
@@ -549,6 +549,15 @@
                 </div>
                 <div id="sankeyChart" style="flex: 1;"></div>
                 <div class="sankey-tooltip" id="sankeyTooltip"></div>
+            </div>
+
+            <div class="chart-card" style="min-height: 700px; display: flex; flex-direction: column; min-width: 350px;">
+                <div class="chart-header">
+                    <div class="chart-title">ICP Distribution (Clicked)</div>
+                </div>
+                <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+                    <canvas id="icpChart" style="max-width: 300px; max-height: 300px;"></canvas>
+                </div>
             </div>
         </div>
 
@@ -566,6 +575,7 @@
                         <tr>
                             <th>Name</th>
                             <th>Email</th>
+                            <th>ICP</th>
                             <th>Campaign</th>
                             <th>Clicks</th>
                             <th>First Click</th>
@@ -575,7 +585,7 @@
                         </tr>
                     </thead>
                     <tbody id="clicksTable">
-                        <tr><td colspan="8" class="loading">Loading...</td></tr>
+                        <tr><td colspan="9" class="loading">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -587,6 +597,7 @@
         let currentCampaign = '';
         let allClicks = [];
         let timelineChart = null;
+        let icpChart = null;
         let sankeyData = { totalLinks: 0, totalClicks: 0, uniqueVisitors: 0 };
 
         // Time filter buttons
@@ -612,7 +623,8 @@
                 loadTimeline(),
                 loadHeatmap(),
                 loadClicks(),
-                loadCampaigns()
+                loadCampaigns(),
+                loadICPStats()
             ]);
         }
 
@@ -1023,7 +1035,7 @@
             const tbody = document.getElementById('clicksTable');
 
             if (clicks.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="loading">No data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="loading">No data</td></tr>';
                 return;
             }
 
@@ -1031,6 +1043,7 @@
                 <tr>
                     <td><strong>${click.first_name} ${click.last_name}</strong></td>
                     <td>${click.email || '-'}</td>
+                    <td><span class="badge badge-gray">${click.icp || 'Non défini'}</span></td>
                     <td><span class="badge badge-campaign">${click.campaign}</span></td>
                     <td><span class="click-count">${click.click_count}</span></td>
                     <td>${click.first_clicked ? formatDate(click.first_clicked) : '-'}</td>
@@ -1084,6 +1097,101 @@
             }
         }
 
+        // Load ICP stats and render pie chart
+        async function loadICPStats() {
+            try {
+                let url = `/api/icp-stats?range=${currentRange}`;
+                if (currentCampaign) {
+                    url += `&campaign=${currentCampaign}`;
+                }
+                const response = await fetch(url);
+                const icpData = await response.json();
+
+                renderICPChart(icpData);
+            } catch (error) {
+                console.error('Error loading ICP stats:', error);
+            }
+        }
+
+        // Render ICP pie chart
+        function renderICPChart(icpData) {
+            const ctx = document.getElementById('icpChart');
+
+            // Destroy existing chart
+            if (icpChart) {
+                icpChart.destroy();
+            }
+
+            if (icpData.length === 0) {
+                // No data to display
+                return;
+            }
+
+            // Rose → Bordeaux gradient colors (same as heatmap and top clickers)
+            const colors = [
+                '#FAD4C8', // Rose très clair
+                '#F5A48A', // Orange clair
+                '#E35A4A', // Rouge orangé
+                '#CC3A32', // Rouge soutenu
+                '#A41519', // Rouge foncé
+                '#63070A'  // Bordeaux très foncé
+            ];
+
+            const labels = icpData.map(d => d.icp);
+            const data = icpData.map(d => d.click_count);
+            const backgroundColors = icpData.map((_, i) => colors[i % colors.length]);
+
+            icpChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: '#111',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#e5e5e5',
+                                font: {
+                                    size: 11,
+                                    family: "'Inter', sans-serif"
+                                },
+                                padding: 12,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#333',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         // Format date
         function formatDate(dateString) {
             if (!dateString) return '-';
@@ -1099,11 +1207,12 @@
 
         // Export CSV
         function exportCSV() {
-            const headers = ['First Name', 'Last Name', 'Email', 'Campaign', 'Clicks', 'First Click', 'Last Click', 'Status'];
+            const headers = ['First Name', 'Last Name', 'Email', 'ICP', 'Campaign', 'Clicks', 'First Click', 'Last Click', 'Status'];
             const rows = allClicks.map(click => [
                 click.first_name,
                 click.last_name,
                 click.email || '',
+                click.icp || 'Non défini',
                 click.campaign,
                 click.click_count,
                 click.first_clicked ? formatDate(click.first_clicked) : '',
