@@ -1,0 +1,64 @@
+{
+  "clay_http_api_configuration": {
+    "name": "Generate Wesser Tracking Link",
+    "description": "Creates a personalized tracking link for each Wesser prospect",
+    "request": {
+      "method": "POST",
+      "url": "https://REMPLACER-PAR-VOTRE-APP.onrender.com/api/create-link",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "first_name": "{{first_name}}",
+        "last_name": "{{last_name}}",
+        "email": "{{email}}",
+        "campaign": "wesser-recrutement.fr",
+        "destination_url": "https://wesser-recrutement.fr/rejoindre"
+      }
+    },
+    "expected_response": {
+      "success": true,
+      "short_url": "https://votre-app.onrender.com/c/AbC123Xy",
+      "link_id": "AbC123Xy"
+    },
+    "extract_field": "short_url",
+    "notes": [
+      "IMPORTANT: Remplacer 'REMPLACER-PAR-VOTRE-APP' par le nom exact de votre app Render",
+      "IMPORTANT: Ne PAS modifier 'campaign': doit rester 'wesser-recrutement.fr'",
+      "Adapter {{first_name}}, {{last_name}}, {{email}} aux noms de vos colonnes Clay",
+      "Remplacer destination_url par votre vraie landing page Wesser"
+    ]
+  },
+  "exemple_avec_colonnes_clay_differentes": {
+    "si_vos_colonnes_clay_sont": {
+      "First Name": "Prénom",
+      "Last Name": "Nom de famille",
+      "Email Address": "Email professionnel"
+    },
+    "alors_utiliser": {
+      "body": {
+        "first_name": "{{First Name}}",
+        "last_name": "{{Last Name}}",
+        "email": "{{Email Address}}",
+        "campaign": "wesser-recrutement.fr",
+        "destination_url": "https://wesser-recrutement.fr/rejoindre"
+      }
+    }
+  },
+  "exemples_destination_url": {
+    "landing_page_generale": "https://wesser-recrutement.fr/rejoindre",
+    "offre_commercial": "https://wesser-recrutement.fr/offres/commercial",
+    "offre_manager": "https://wesser-recrutement.fr/offres/manager",
+    "avec_utm_tracking": "https://wesser-recrutement.fr/rejoindre?utm_source=linkedin&utm_medium=outreach&utm_campaign=q1-2025",
+    "avec_ref_linkedin": "https://wesser-recrutement.fr/candidature?ref=linkedin&job=commercial"
+  },
+  "formule_clay_pour_extraire_le_lien": "{{HTTP API Response.short_url}}",
+  "exemple_message_linkedin": "Bonjour {{first_name}},\n\nJ'ai vu votre profil et je pense que vous pourriez être intéressé(e) par une opportunité chez Wesser.\n\nDécouvrez notre proposition ici : {{Wesser Tracking Link}}\n\nAu plaisir d'échanger,\nL'équipe Wesser",
+  "verification": {
+    "etape_1": "Tester avec 1 prospect dans Clay",
+    "etape_2": "Vérifier que le lien est généré (format: https://xxx.onrender.com/c/XXXXXXXX)",
+    "etape_3": "Cliquer sur le lien pour tester la redirection",
+    "etape_4": "Vérifier dans le dashboard que le clic est enregistré sous 'wesser-recrutement.fr'",
+    "etape_5": "Lancer le batch complet une fois validé"
+  }
+}
