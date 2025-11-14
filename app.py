@@ -139,8 +139,18 @@ def create_link():
 
         conn.commit()
 
-        # Use custom domain if available
-        custom_domain = os.getenv('CUSTOM_DOMAIN', 'agence.aura.camp')
+        # Determine domain based on campaign
+        # Support for multiple custom domains via environment variables
+        if 'wesser' in campaign.lower():
+            # Use Wesser custom domain
+            custom_domain = os.getenv('WESSER_DOMAIN', os.getenv('CUSTOM_DOMAIN', 'link-tracker.onrender.com'))
+        elif 'aura' in campaign.lower():
+            # Use Aura custom domain
+            custom_domain = os.getenv('AURA_DOMAIN', os.getenv('CUSTOM_DOMAIN', 'agence.aura.camp'))
+        else:
+            # Default domain
+            custom_domain = os.getenv('CUSTOM_DOMAIN', 'link-tracker.onrender.com')
+
         base_url = f"https://{custom_domain}"
         short_url = f"{base_url}/c/{link_id}"
 
