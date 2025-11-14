@@ -7,10 +7,12 @@ Un système complet de création et tracking de liens raccourcis personnalisés 
 - ✅ **Génération de liens uniques** pour chaque prospect
 - ✅ **Tracking détaillé** : qui a cliqué, quand, combien de fois
 - ✅ **Dashboard analytics en temps réel** avec visualisations
+- ✅ **ICP Tracking** : Catégorisez vos prospects par profil (CEO, CTO, etc.)
+- ✅ **Graphique camembert ICP** : Visualisez la répartition des profils qui cliquent
 - ✅ **Intégration Clay native** via webhook HTTP
 - ✅ **API REST complète** pour automatisation
 - ✅ **Géolocalisation** des clics (pays, ville)
-- ✅ **Export CSV** de toutes les données
+- ✅ **Export CSV** de toutes les données (incluant ICP)
 - ✅ **Multi-campagnes** pour segmenter vos actions
 - ✅ **Gratuit** à déployer sur Render
 

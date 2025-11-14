@@ -34,6 +34,8 @@ Navigation rapide vers tous les guides et fichiers importants.
 - **[API.md](./API.md)** - Documentation complète de l'API REST
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Déploiement sur Render avec PostgreSQL
 - **[WESSER_SETUP.md](./WESSER_SETUP.md)** - Setup complet multi-domaine pour Wesser
+- **[ICP_FEATURE.md](./ICP_FEATURE.md)** - ⭐ Feature ICP (Ideal Customer Profile) - Documentation complète
+- **[ICP_QUICK_START.md](./ICP_QUICK_START.md)** - ⚡ Activer la feature ICP en 3 étapes
 
 ---
 
@@ -53,6 +55,10 @@ Navigation rapide vers tous les guides et fichiers importants.
 - **[test_multi_campaign.py](./test_multi_campaign.py)** - Script de test automatisé pour les deux campagnes
   ```bash
   python3 test_multi_campaign.py
+  ```
+- **[migrate_add_icp.py](./migrate_add_icp.py)** - Migration pour ajouter la colonne ICP
+  ```bash
+  python3 migrate_add_icp.py
   ```
 
 ---
