@@ -263,25 +263,30 @@ def get_analytics():
     ''')
     recent_clicks = cur.fetchall()
 
-    # Geographic distribution (with time filter)
-    geo_query = '''
-        SELECT country, COUNT(*) as clicks
+    # Top clickers (with time filter) - people who clicked the most
+    top_clickers_query = '''
+        SELECT
+            l.first_name,
+            l.last_name,
+            l.email,
+            COUNT(c.id) as clicks
         FROM clicks c
+        JOIN links l ON c.link_id = l.link_id
     '''
-    if campaign_filter:
-        geo_query += f" WHERE c.link_id IN (SELECT link_id FROM links WHERE campaign = '{campaign_filter}')"
-        if time_filter:
-            geo_query += f" AND {time_filter.replace('WHERE ', '')}"
-    else:
-        geo_query += f" {time_filter}"
+    if campaign_filter and time_filter:
+        top_clickers_query += f" WHERE l.campaign = '{campaign_filter}' AND {time_filter.replace('WHERE ', '')}"
+    elif campaign_filter:
+        top_clickers_query += f" WHERE l.campaign = '{campaign_filter}'"
+    elif time_filter:
+        top_clickers_query += f" {time_filter}"
 
-    geo_query += '''
-        GROUP BY country
+    top_clickers_query += '''
+        GROUP BY l.first_name, l.last_name, l.email
         ORDER BY clicks DESC
         LIMIT 10
     '''
 
-    cur.execute(geo_query)
+    cur.execute(top_clickers_query)
     geo_data = cur.fetchall()
 
     cur.close()

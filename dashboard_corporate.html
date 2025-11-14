@@ -165,55 +165,64 @@
         }
 
         .heatmap-card {
-            background: #111;
-            border: 1px solid #222;
+            background: #fff;
+            border: 1px solid #e0e0e0;
             border-radius: 4px;
             padding: 1.5rem;
             display: flex;
             flex-direction: column;
         }
 
+        .heatmap-card .chart-title {
+            color: #333;
+        }
+
         .heatmap-grid {
             display: grid;
-            grid-template-columns: 50px repeat(7, 1fr);
-            gap: 2px;
-            margin-top: 0.5rem;
+            grid-template-columns: 60px repeat(7, 1fr);
+            gap: 1px;
+            margin-top: 1rem;
             max-width: 700px;
-            font-size: 1rem;
+            font-size: 0.75rem;
+            background: #fff;
         }
 
         .heatmap-label {
-            font-size: 1rem;
-            color: #666;
+            font-size: 0.7rem;
+            color: #333;
             display: flex;
             align-items: center;
-            justify-content: flex-end;
-            padding-right: 0.4rem;
+            justify-content: flex-start;
+            padding-left: 0;
             line-height: 1;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .heatmap-day {
-            font-size: 1rem;
-            color: #666;
+            font-size: 0.7rem;
+            color: #333;
             text-align: center;
             padding: 0.3rem 0;
-            font-weight: 600;
+            font-weight: 300;
             line-height: 1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .heatmap-cell {
             width: 100%;
-            height: 16px;
-            background: #1a1a1a;
-            border-radius: 2px;
+            height: 24px;
+            background: #f5f5f5;
+            border-radius: 0;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: opacity 0.2s;
+            border: none;
         }
 
         .heatmap-cell:hover {
-            transform: scale(1.3);
-            z-index: 10;
-            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.4);
+            opacity: 0.8;
         }
 
         .table-card {
@@ -354,45 +363,58 @@
 
         .geo-list {
             list-style: none;
+            padding: 0;
+            margin: 0;
         }
 
         .geo-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #1a1a1a;
+            padding: 0.5rem 0;
+            gap: 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
         }
 
         .geo-item:last-child {
             border-bottom: none;
         }
 
-        .geo-country {
-            font-size: 0.875rem;
-            color: #e5e5e5;
+        .geo-rank {
+            font-size: 0.7rem;
+            color: #999;
+            min-width: 20px;
+            text-align: right;
+            font-weight: 300;
+        }
+
+        .geo-person {
+            flex: 1;
+            font-size: 0.8rem;
+            color: #333;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .geo-bar {
-            flex: 1;
-            height: 4px;
-            background: #1a1a1a;
-            margin: 0 1rem;
-            border-radius: 2px;
-            overflow: hidden;
+            flex: 2;
+            height: 20px;
+            background: transparent;
+            position: relative;
+            margin: 0;
         }
 
         .geo-bar-fill {
             height: 100%;
-            background: #fff;
-            border-radius: 2px;
+            border-radius: 0;
+            transition: width 0.3s ease;
         }
 
         .geo-count {
-            font-size: 0.875rem;
-            color: #888;
-            font-weight: 600;
-            min-width: 40px;
+            font-size: 0.75rem;
+            color: #666;
+            font-weight: 400;
+            min-width: 50px;
             text-align: right;
         }
 
@@ -502,7 +524,7 @@
 
             <div class="chart-card">
                 <div class="chart-header">
-                    <div class="chart-title">Geographic Distribution</div>
+                    <div class="chart-title">Top Clickers</div>
                 </div>
                 <ul class="geo-list" id="geoList">
                     <li class="loading">Loading...</li>
@@ -764,18 +786,45 @@
                 .attr('text-anchor', 'start');
         }
 
-        // Render geographic data
+        // Render top clickers data with rose → bordeaux gradient
         function renderGeoData(geoData) {
             const maxClicks = Math.max(...geoData.map(g => g.clicks), 1);
-            const html = geoData.map(geo => `
+
+            // Helper function for gradient color based on intensity
+            function getBarColor(intensity) {
+                const colors = [
+                    { threshold: 0, color: '#FAD4C8' },
+                    { threshold: 0.2, color: '#F5A48A' },
+                    { threshold: 0.4, color: '#E35A4A' },
+                    { threshold: 0.6, color: '#CC3A32' },
+                    { threshold: 0.8, color: '#A41519' },
+                    { threshold: 1.0, color: '#63070A' }
+                ];
+
+                for (let i = 0; i < colors.length - 1; i++) {
+                    if (intensity >= colors[i].threshold && intensity <= colors[i + 1].threshold) {
+                        return colors[i].color;
+                    }
+                }
+                return colors[colors.length - 1].color;
+            }
+
+            const html = geoData.map((geo, index) => {
+                const intensity = geo.clicks / maxClicks;
+                const barColor = getBarColor(intensity);
+                const fullName = `${geo.first_name} ${geo.last_name}`;
+
+                return `
                 <li class="geo-item">
-                    <span class="geo-country">${geo.country}</span>
+                    <span class="geo-rank">${index + 1}</span>
+                    <span class="geo-person">${fullName}</span>
                     <div class="geo-bar">
-                        <div class="geo-bar-fill" style="width: ${(geo.clicks / maxClicks) * 100}%"></div>
+                        <div class="geo-bar-fill" style="width: ${(geo.clicks / maxClicks) * 100}%; background: ${barColor};"></div>
                     </div>
                     <span class="geo-count">${geo.clicks}</span>
                 </li>
-            `).join('');
+            `}).join('');
+
             document.getElementById('geoList').innerHTML = html || '<li class="loading">No data</li>';
         }
 
@@ -885,26 +934,49 @@
             // Find max for scaling
             const maxClicks = Math.max(...data.map(d => parseInt(d.click_count)), 1);
 
-            // Color gradient function: white -> yellow -> red
+            // Color gradient function: rose pâle -> bordeaux foncé
             function getHeatColor(intensity) {
-                if (intensity === 0) return '#1a1a1a'; // Dark background for 0
+                if (intensity === 0) return '#f5f5f5'; // Très clair pour 0
 
-                // White (low) -> Yellow (medium) -> Red (high)
-                if (intensity < 0.5) {
-                    // White to Yellow
-                    const ratio = intensity * 2; // 0 to 1
-                    const r = 255;
-                    const g = 255;
-                    const b = Math.round(255 * (1 - ratio));
-                    return `rgb(${r}, ${g}, ${b})`;
-                } else {
-                    // Yellow to Red
-                    const ratio = (intensity - 0.5) * 2; // 0 to 1
-                    const r = 255;
-                    const g = Math.round(255 * (1 - ratio));
-                    const b = 0;
-                    return `rgb(${r}, ${g}, ${b})`;
+                // Dégradé rose pâle → bordeaux foncé
+                const colors = [
+                    { threshold: 0, color: '#FAD4C8' },      // ≈ 1 000 - rose très clair
+                    { threshold: 0.2, color: '#F5A48A' },    // ≈ 2 000 - orange clair
+                    { threshold: 0.4, color: '#E35A4A' },    // ≈ 3 000 - rouge orangé
+                    { threshold: 0.6, color: '#CC3A32' },    // ≈ 4 000 - rouge soutenu
+                    { threshold: 0.8, color: '#A41519' },    // ≈ 5 000 - rouge foncé
+                    { threshold: 1.0, color: '#63070A' }     // ≈ 5 500+ - bordeaux très foncé
+                ];
+
+                // Trouver les deux couleurs entre lesquelles interpoler
+                for (let i = 0; i < colors.length - 1; i++) {
+                    if (intensity >= colors[i].threshold && intensity <= colors[i + 1].threshold) {
+                        const start = colors[i];
+                        const end = colors[i + 1];
+                        const localRatio = (intensity - start.threshold) / (end.threshold - start.threshold);
+
+                        // Interpoler entre les deux couleurs
+                        const startRGB = hexToRgb(start.color);
+                        const endRGB = hexToRgb(end.color);
+
+                        const r = Math.round(startRGB.r + (endRGB.r - startRGB.r) * localRatio);
+                        const g = Math.round(startRGB.g + (endRGB.g - startRGB.g) * localRatio);
+                        const b = Math.round(startRGB.b + (endRGB.b - startRGB.b) * localRatio);
+
+                        return `rgb(${r}, ${g}, ${b})`;
+                    }
                 }
+
+                return colors[colors.length - 1].color;
+            }
+
+            function hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : { r: 0, g: 0, b: 0 };
             }
 
             // Build HTML
