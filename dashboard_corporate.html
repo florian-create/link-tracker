@@ -165,8 +165,8 @@
         }
 
         .heatmap-card {
-            background: #fff;
-            border: 1px solid #e0e0e0;
+            background: transparent;
+            border: 1px solid #222;
             border-radius: 4px;
             padding: 1.5rem;
             display: flex;
@@ -174,7 +174,7 @@
         }
 
         .heatmap-card .chart-title {
-            color: #333;
+            color: #fff;
         }
 
         .heatmap-grid {
@@ -184,12 +184,12 @@
             margin-top: 1rem;
             max-width: 700px;
             font-size: 0.75rem;
-            background: #fff;
+            background: transparent;
         }
 
         .heatmap-label {
             font-size: 0.7rem;
-            color: #333;
+            color: #e5e5e5;
             display: flex;
             align-items: center;
             justify-content: flex-start;
@@ -202,7 +202,7 @@
 
         .heatmap-day {
             font-size: 0.7rem;
-            color: #333;
+            color: #e5e5e5;
             text-align: center;
             padding: 0.3rem 0;
             font-weight: 300;
@@ -214,7 +214,7 @@
         .heatmap-cell {
             width: 100%;
             height: 24px;
-            background: #f5f5f5;
+            background: #1a1a1a;
             border-radius: 0;
             cursor: pointer;
             transition: opacity 0.2s;
@@ -372,7 +372,7 @@
             align-items: center;
             padding: 0.5rem 0;
             gap: 0.75rem;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #1a1a1a;
         }
 
         .geo-item:last-child {
@@ -381,7 +381,7 @@
 
         .geo-rank {
             font-size: 0.7rem;
-            color: #999;
+            color: #666;
             min-width: 20px;
             text-align: right;
             font-weight: 300;
@@ -390,8 +390,8 @@
         .geo-person {
             flex: 1;
             font-size: 0.8rem;
-            color: #333;
-            font-weight: 400;
+            color: #e5e5e5;
+            font-weight: 300;
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
@@ -412,8 +412,8 @@
 
         .geo-count {
             font-size: 0.75rem;
-            color: #666;
-            font-weight: 400;
+            color: #888;
+            font-weight: 300;
             min-width: 50px;
             text-align: right;
         }
@@ -534,20 +534,20 @@
 
         <!-- Heatmap and Sankey -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-            <div class="chart-card">
+            <div class="chart-card" style="min-height: 700px; display: flex; flex-direction: column;">
                 <div class="chart-header">
                     <div class="chart-title">Click Activity Heatmap</div>
                 </div>
-                <div id="heatmapContainer">
+                <div id="heatmapContainer" style="flex: 1; display: flex; align-items: center;">
                     <div class="loading">Loading heatmap...</div>
                 </div>
             </div>
 
-            <div class="chart-card">
+            <div class="chart-card" style="min-height: 700px; display: flex; flex-direction: column;">
                 <div class="chart-header">
                     <div class="chart-title">Conversion Funnel</div>
                 </div>
-                <div id="sankeyChart"></div>
+                <div id="sankeyChart" style="flex: 1;"></div>
                 <div class="sankey-tooltip" id="sankeyTooltip"></div>
             </div>
         </div>
@@ -669,7 +669,7 @@
             if (!containerNode) return;
 
             const width = containerNode.getBoundingClientRect().width;
-            const height = 450;
+            const height = containerNode.getBoundingClientRect().height || 600;
 
             // Create SVG
             const svg = container.append('svg')
@@ -936,7 +936,7 @@
 
             // Color gradient function: rose pâle -> bordeaux foncé
             function getHeatColor(intensity) {
-                if (intensity === 0) return '#f5f5f5'; // Très clair pour 0
+                if (intensity === 0) return '#1a1a1a'; // Fond sombre pour 0
 
                 // Dégradé rose pâle → bordeaux foncé
                 const colors = [
