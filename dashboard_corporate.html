@@ -704,6 +704,54 @@
             50% { opacity: 0.3; }
         }
 
+        /* Filter badges */
+        .filter-badge {
+            background: #1a1a2e;
+            color: #60a5fa;
+            padding: 0.5rem 0.75rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid #2a2a3e;
+        }
+
+        .filter-badge-close {
+            background: transparent;
+            border: none;
+            color: #60a5fa;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            line-height: 1;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .filter-badge-close:hover {
+            opacity: 1;
+        }
+
+        /* Clickable chart elements */
+        .clickable-chart {
+            cursor: pointer !important;
+        }
+
+        .clickable-chart:hover {
+            opacity: 0.8 !important;
+        }
+
+        .geo-item {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .geo-item:hover {
+            background: #1a1a1a;
+        }
+
         @media (max-width: 1024px) {
             .chart-grid {
                 grid-template-columns: 1fr;
@@ -1045,6 +1093,7 @@
             <div class="table-header">
                 <h2 class="table-title">Click Details</h2>
                 <div class="table-actions">
+                    <div id="activeFilters" style="display: flex; gap: 0.5rem; align-items: center; margin-right: 1rem;"></div>
                     <button class="export-btn" onclick="exportCSV()">EXPORT CSV</button>
                 </div>
             </div>
@@ -1099,6 +1148,13 @@
         let timelineChart = null;
         let icpChart = null;
         let sankeyData = { totalLinks: 0, totalClicks: 0, uniqueVisitors: 0 };
+
+        // Chart filters
+        let chartFilters = {
+            icp: null,
+            person: null,
+            date: null
+        };
 
         // Time filter buttons
         document.querySelectorAll('.time-btn').forEach(btn => {
@@ -1358,7 +1414,7 @@
                 const fullName = `${geo.first_name} ${geo.last_name}`;
 
                 return `
-                <li class="geo-item">
+                <li class="geo-item" onclick="applyChartFilter('person', '${fullName}'); document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth', block: 'start' });">
                     <span class="geo-rank">${index + 1}</span>
                     <span class="geo-person">${fullName}</span>
                     <div class="geo-bar">
@@ -1404,6 +1460,15 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
+                        onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const dateLabel = data[index].period;
+                                applyChartFilter('date', dateLabel);
+                                // Scroll to table
+                                document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        },
                         plugins: {
                             legend: {
                                 display: false
@@ -1614,29 +1679,119 @@
             }
         }
 
-        // Filter table by search term
-        function filterTable(term) {
-            searchTerm = term.toLowerCase().trim();
+        // Apply chart filter
+        function applyChartFilter(type, value) {
+            chartFilters[type] = value;
+            updateFilterBadges();
+            applyAllFilters();
+        }
 
-            if (!searchTerm) {
-                filteredClicks = allClicks;
-                renderClicksTable();
-                return;
+        // Clear chart filter
+        function clearChartFilter(type) {
+            chartFilters[type] = null;
+            updateFilterBadges();
+            applyAllFilters();
+        }
+
+        // Clear all chart filters
+        function clearAllChartFilters() {
+            chartFilters = { icp: null, person: null, date: null };
+            updateFilterBadges();
+            applyAllFilters();
+        }
+
+        // Update filter badges display
+        function updateFilterBadges() {
+            const container = document.getElementById('activeFilters');
+            const badges = [];
+
+            if (chartFilters.icp) {
+                badges.push(`
+                    <div class="filter-badge">
+                        ICP: ${chartFilters.icp}
+                        <button class="filter-badge-close" onclick="clearChartFilter('icp')">×</button>
+                    </div>
+                `);
             }
 
-            filteredClicks = allClicks.filter(click => {
-                const fullName = `${click.first_name} ${click.last_name}`.toLowerCase();
-                const email = (click.email || '').toLowerCase();
-                const icp = (click.icp || '').toLowerCase();
-                const campaign = click.campaign.toLowerCase();
+            if (chartFilters.person) {
+                badges.push(`
+                    <div class="filter-badge">
+                        Person: ${chartFilters.person}
+                        <button class="filter-badge-close" onclick="clearChartFilter('person')">×</button>
+                    </div>
+                `);
+            }
 
-                return fullName.includes(searchTerm) ||
-                       email.includes(searchTerm) ||
-                       icp.includes(searchTerm) ||
-                       campaign.includes(searchTerm);
+            if (chartFilters.date) {
+                badges.push(`
+                    <div class="filter-badge">
+                        Date: ${chartFilters.date}
+                        <button class="filter-badge-close" onclick="clearChartFilter('date')">×</button>
+                    </div>
+                `);
+            }
+
+            if (badges.length > 0) {
+                badges.push(`
+                    <button class="filter-badge-close" onclick="clearAllChartFilters()" style="font-size: 0.75rem; text-decoration: underline;">
+                        Clear all
+                    </button>
+                `);
+            }
+
+            container.innerHTML = badges.join('');
+        }
+
+        // Apply all filters (search + chart filters)
+        function applyAllFilters() {
+            filteredClicks = allClicks.filter(click => {
+                // Apply search filter
+                if (searchTerm) {
+                    const fullName = `${click.first_name} ${click.last_name}`.toLowerCase();
+                    const email = (click.email || '').toLowerCase();
+                    const icp = (click.icp || '').toLowerCase();
+                    const campaign = click.campaign.toLowerCase();
+
+                    const matchesSearch = fullName.includes(searchTerm) ||
+                           email.includes(searchTerm) ||
+                           icp.includes(searchTerm) ||
+                           campaign.includes(searchTerm);
+
+                    if (!matchesSearch) return false;
+                }
+
+                // Apply ICP filter
+                if (chartFilters.icp && click.icp !== chartFilters.icp) {
+                    return false;
+                }
+
+                // Apply person filter
+                if (chartFilters.person) {
+                    const fullName = `${click.first_name} ${click.last_name}`;
+                    if (fullName !== chartFilters.person) {
+                        return false;
+                    }
+                }
+
+                // Apply date filter (match the day)
+                if (chartFilters.date && click.last_clicked) {
+                    const clickDate = new Date(click.last_clicked).toLocaleDateString();
+                    if (clickDate !== new Date(chartFilters.date).toLocaleDateString()) {
+                        return false;
+                    }
+                }
+
+                return true;
             });
 
             renderClicksTable();
+        }
+
+        // Filter table by search term
+        function filterTable(term) {
+            searchTerm = term.toLowerCase().trim();
+            applyAllFilters();
         }
 
         // Delete link
@@ -1785,6 +1940,15 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const icp = labels[index];
+                            applyChartFilter('icp', icp);
+                            // Scroll to table
+                            document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    },
                     plugins: {
                         legend: {
                             position: 'bottom',
