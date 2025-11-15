@@ -485,10 +485,6 @@
                 grid-template-columns: 1fr;
             }
 
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
             .container {
                 padding: 1rem;
             }
@@ -523,23 +519,6 @@
             .time-filter {
                 min-width: 0 !important;
                 width: 100%;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .stat-card {
-                min-width: 0;
-            }
-
-            .stat-card {
-                padding: 1rem;
-            }
-
-            .stat-value {
-                font-size: 1.75rem;
             }
 
             .chart-card {
@@ -628,6 +607,17 @@
             .time-filter {
                 width: 100% !important;
                 flex: none !important;
+            }
+
+            /* Stats en colonne simple sur mobile */
+            .stats-grid {
+                grid-template-columns: 1fr !important;
+                gap: 0.75rem;
+            }
+
+            .stat-card {
+                min-width: 0;
+                padding: 1rem;
             }
 
             .stat-value {
