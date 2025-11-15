@@ -292,6 +292,51 @@
             white-space: nowrap;
         }
 
+        /* Hot Leads */
+        .hot-lead-card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .hot-lead-card:hover {
+            background: #222;
+            border-color: #fff;
+        }
+
+        .hot-lead-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .hot-lead-name {
+            font-weight: 600;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .hot-lead-clicks {
+            background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+            color: #fff;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .hot-lead-info {
+            font-size: 0.75rem;
+            color: #888;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
         .table-title {
             font-size: 0.875rem;
             font-weight: 600;
@@ -606,6 +651,11 @@
                 align-items: stretch;
             }
 
+            /* Stack Hot Leads and ICP Performance on mobile */
+            .stats-secondary-grid {
+                grid-template-columns: 1fr !important;
+            }
+
             .header-content > div {
                 width: 100%;
                 max-width: 100%;
@@ -862,6 +912,42 @@
             </div>
         </div>
 
+        <!-- Hot Leads & ICP Stats -->
+        <div class="stats-secondary-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <!-- Hot Leads Section -->
+            <div class="table-card" style="min-height: 400px;">
+                <div class="table-header">
+                    <h2 class="table-title">🔥 Hot Leads</h2>
+                    <div style="color: #888; font-size: 0.75rem;">3+ clicks</div>
+                </div>
+                <div id="hotLeadsContainer" style="padding: 1rem; max-height: 350px; overflow-y: auto;">
+                    <div class="loading">Loading hot leads...</div>
+                </div>
+            </div>
+
+            <!-- ICP Performance -->
+            <div class="table-card" style="min-height: 400px;">
+                <div class="table-header">
+                    <h2 class="table-title">📊 ICP Performance</h2>
+                </div>
+                <div style="overflow-x: auto; max-height: 350px; overflow-y: auto;">
+                    <table id="icpComparisonTable" style="font-size: 0.875rem;">
+                        <thead>
+                            <tr>
+                                <th>ICP</th>
+                                <th>Links</th>
+                                <th>Clicks</th>
+                                <th>Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="4" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Data Table -->
         <div class="table-card">
             <div class="table-header">
@@ -950,19 +1036,39 @@
                 loadHeatmap(),
                 loadClicks(),
                 loadCampaigns(),
-                loadICPStats()
+                loadICPStats(),
+                loadHotLeads(),
+                loadICPComparison()
             ]);
         }
 
-        // Load analytics
+        // Load analytics with trends and response time
         async function loadAnalytics() {
             try {
+                // Load main analytics
                 let url = `/api/analytics?range=${currentRange}`;
                 if (currentCampaign) {
                     url += `&campaign=${currentCampaign}`;
                 }
-                const response = await fetch(url);
-                const data = await response.json();
+
+                // Load trends and response time in parallel
+                const [analyticsRes, trendsRes, responseTimeRes] = await Promise.all([
+                    fetch(url),
+                    fetch(`/api/stats/trends?range=${currentRange}${currentCampaign ? '&campaign=' + currentCampaign : ''}`),
+                    fetch(`/api/stats/response-time${currentCampaign ? '?campaign=' + currentCampaign : ''}`)
+                ]);
+
+                const data = await analyticsRes.json();
+                const trends = await trendsRes.json();
+                const responseTime = await responseTimeRes.json();
+
+                // Helper to format trend indicator
+                const getTrendHTML = (change) => {
+                    if (change === 0) return '';
+                    const arrow = change > 0 ? '↑' : '↓';
+                    const color = change > 0 ? '#4ade80' : '#f87171';
+                    return `<div class="stat-change" style="color: ${color}">${arrow} ${Math.abs(change)}%</div>`;
+                };
 
                 document.getElementById('statsGrid').innerHTML = `
                     <div class="stat-card">
@@ -972,14 +1078,21 @@
                     <div class="stat-card">
                         <div class="stat-label">Total Clicks</div>
                         <div class="stat-value">${data.total_clicks.toLocaleString()}</div>
+                        ${getTrendHTML(trends.changes.total_clicks)}
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Unique Visitors</div>
                         <div class="stat-value">${data.unique_clicks.toLocaleString()}</div>
+                        ${getTrendHTML(trends.changes.unique_clicks)}
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Click Rate</div>
                         <div class="stat-value">${data.click_rate}%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Response Time</div>
+                        <div class="stat-value" style="font-size: 1.75rem;">${responseTime.avg_first_click}</div>
+                        <div class="stat-label" style="margin-top: 0.5rem; text-transform: none;">Re-click: ${responseTime.reclick_rate}%</div>
                     </div>
                 `;
 
@@ -1615,6 +1728,80 @@
                     }
                 }
             });
+        }
+
+        // Load Hot Leads
+        async function loadHotLeads() {
+            try {
+                const url = `/api/stats/hot-leads${currentCampaign ? '?campaign=' + currentCampaign : ''}`;
+                const response = await fetch(url);
+                const hotLeads = await response.json();
+
+                const container = document.getElementById('hotLeadsContainer');
+
+                if (hotLeads.length === 0) {
+                    container.innerHTML = '<div class="loading">No hot leads found</div>';
+                    return;
+                }
+
+                container.innerHTML = hotLeads.map(lead => `
+                    <div class="hot-lead-card">
+                        <div class="hot-lead-header">
+                            <div class="hot-lead-name">${lead.first_name} ${lead.last_name}</div>
+                            <div class="hot-lead-clicks">${lead.click_count} clicks</div>
+                        </div>
+                        <div class="hot-lead-info">
+                            ${lead.email ? `<span>📧 ${lead.email}</span>` : ''}
+                            ${lead.icp ? `<span>🎯 ${lead.icp}</span>` : ''}
+                            <span>⏱️ ${formatTimeAgo(lead.last_clicked)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading hot leads:', error);
+            }
+        }
+
+        // Load ICP Comparison
+        async function loadICPComparison() {
+            try {
+                const url = `/api/stats/icp${currentCampaign ? '?campaign=' + currentCampaign : ''}`;
+                const response = await fetch(url);
+                const icpData = await response.json();
+
+                const tbody = document.querySelector('#icpComparisonTable tbody');
+
+                if (icpData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="loading">No data</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = icpData.map(icp => `
+                    <tr>
+                        <td><strong>${icp.icp}</strong></td>
+                        <td>${icp.total_links}</td>
+                        <td>${icp.total_clicks}</td>
+                        <td><span class="badge badge-${icp.click_rate >= 40 ? 'success' : 'gray'}">${icp.click_rate}%</span></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading ICP comparison:', error);
+            }
+        }
+
+        // Format time ago
+        function formatTimeAgo(dateString) {
+            if (!dateString) return 'N/A';
+
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}min ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+            return formatDate(dateString);
         }
 
         // Format date
