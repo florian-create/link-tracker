@@ -211,39 +211,45 @@ def get_analytics():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Build time filter for clicks
-    time_filter = ""
-    if time_range == '24h':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '24 hours'"
-    elif time_range == '7d':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '7 days'"
-    elif time_range == '30d':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '30 days'"
+    # Build time filter parameters
+    params = []
+    time_conditions = []
+    campaign_conditions = []
 
-    # Add campaign filter
+    if time_range == '24h':
+        time_conditions.append("c.clicked_at >= NOW() - INTERVAL '24 hours'")
+    elif time_range == '7d':
+        time_conditions.append("c.clicked_at >= NOW() - INTERVAL '7 days'")
+    elif time_range == '30d':
+        time_conditions.append("c.clicked_at >= NOW() - INTERVAL '30 days'")
+
     if campaign_filter:
-        if time_filter:
-            time_filter += f" AND l.campaign = '{campaign_filter}'"
-        else:
-            time_filter = f"WHERE l.campaign = '{campaign_filter}'"
+        campaign_conditions.append("l.campaign = %s")
+        params.append(campaign_filter)
+
+    # Build WHERE clause
+    all_conditions = time_conditions + campaign_conditions
+    where_clause = "WHERE " + " AND ".join(all_conditions) if all_conditions else ""
 
     # Total links created (with campaign filter)
     if campaign_filter:
-        cur.execute(f"SELECT COUNT(*) as total_links FROM links WHERE campaign = '{campaign_filter}'")
+        cur.execute('SELECT COUNT(*) as total_links FROM links WHERE campaign = %s', (campaign_filter,))
     else:
         cur.execute('SELECT COUNT(*) as total_links FROM links')
     total_links = cur.fetchone()['total_links']
 
     # Total clicks (with time and campaign filter)
-    if time_filter:
-        cur.execute(f'SELECT COUNT(*) as total_clicks FROM clicks c JOIN links l ON c.link_id = l.link_id {time_filter}')
+    if where_clause:
+        query = f'SELECT COUNT(*) as total_clicks FROM clicks c JOIN links l ON c.link_id = l.link_id {where_clause}'
+        cur.execute(query, tuple(params))
     else:
         cur.execute('SELECT COUNT(*) as total_clicks FROM clicks')
     total_clicks = cur.fetchone()['total_clicks']
 
     # Unique links clicked (with time and campaign filter)
-    if time_filter:
-        cur.execute(f'SELECT COUNT(DISTINCT c.link_id) as unique_clicks FROM clicks c JOIN links l ON c.link_id = l.link_id {time_filter}')
+    if where_clause:
+        query = f'SELECT COUNT(DISTINCT c.link_id) as unique_clicks FROM clicks c JOIN links l ON c.link_id = l.link_id {where_clause}'
+        cur.execute(query, tuple(params))
     else:
         cur.execute('SELECT COUNT(DISTINCT link_id) as unique_clicks FROM clicks')
     unique_clicks = cur.fetchone()['unique_clicks']
@@ -251,32 +257,37 @@ def get_analytics():
     # Click rate
     click_rate = (unique_clicks / total_links * 100) if total_links > 0 else 0
 
-    # Clicks by campaign (with time filter) - need to adjust time_filter for this query
-    campaign_time_filter = time_filter.replace('WHERE c.', 'WHERE ').replace('c.clicked_at', 'c.clicked_at') if time_filter and 'WHERE c.' in time_filter else time_filter
-    cur.execute(f'''
+    # Clicks by campaign (with time filter)
+    campaign_where = "WHERE " + " AND ".join(time_conditions) if time_conditions else ""
+    query = f'''
         SELECT l.campaign, COUNT(c.id) as clicks
         FROM links l
         LEFT JOIN clicks c ON l.link_id = c.link_id
-        {campaign_time_filter}
+        {campaign_where}
         GROUP BY l.campaign
         ORDER BY clicks DESC
-    ''')
+    '''
+    cur.execute(query)
     campaigns = cur.fetchall()
 
     # Recent clicks (with time filter)
-    cur.execute(f'''
+    query = f'''
         SELECT l.first_name, l.last_name, l.email, l.campaign,
                c.clicked_at, c.country, c.city
         FROM clicks c
         JOIN links l ON c.link_id = l.link_id
-        {time_filter}
+        {where_clause}
         ORDER BY c.clicked_at DESC
         LIMIT 10
-    ''')
+    '''
+    if where_clause:
+        cur.execute(query, tuple(params))
+    else:
+        cur.execute(query)
     recent_clicks = cur.fetchall()
 
     # Top clickers (with time filter) - people who clicked the most
-    top_clickers_query = '''
+    query = f'''
         SELECT
             l.first_name,
             l.last_name,
@@ -284,21 +295,15 @@ def get_analytics():
             COUNT(c.id) as clicks
         FROM clicks c
         JOIN links l ON c.link_id = l.link_id
-    '''
-    if campaign_filter and time_filter:
-        top_clickers_query += f" WHERE l.campaign = '{campaign_filter}' AND {time_filter.replace('WHERE ', '')}"
-    elif campaign_filter:
-        top_clickers_query += f" WHERE l.campaign = '{campaign_filter}'"
-    elif time_filter:
-        top_clickers_query += f" {time_filter}"
-
-    top_clickers_query += '''
+        {where_clause}
         GROUP BY l.first_name, l.last_name, l.email
         ORDER BY clicks DESC
         LIMIT 10
     '''
-
-    cur.execute(top_clickers_query)
+    if where_clause:
+        cur.execute(query, tuple(params))
+    else:
+        cur.execute(query)
     geo_data = cur.fetchall()
 
     cur.close()
@@ -374,19 +379,22 @@ def get_icp_stats():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Build time filter for clicks
-    time_filter = ""
-    if time_range == '24h':
-        time_filter = "AND c.clicked_at >= NOW() - INTERVAL '24 hours'"
-    elif time_range == '7d':
-        time_filter = "AND c.clicked_at >= NOW() - INTERVAL '7 days'"
-    elif time_range == '30d':
-        time_filter = "AND c.clicked_at >= NOW() - INTERVAL '30 days'"
+    # Build filter conditions and parameters
+    conditions = ["1=1"]
+    params = []
 
-    # Build campaign filter
-    campaign_condition = ""
+    if time_range == '24h':
+        conditions.append("c.clicked_at >= NOW() - INTERVAL '24 hours'")
+    elif time_range == '7d':
+        conditions.append("c.clicked_at >= NOW() - INTERVAL '7 days'")
+    elif time_range == '30d':
+        conditions.append("c.clicked_at >= NOW() - INTERVAL '30 days'")
+
     if campaign_filter:
-        campaign_condition = f"AND l.campaign = '{campaign_filter}'"
+        conditions.append("l.campaign = %s")
+        params.append(campaign_filter)
+
+    where_clause = " AND ".join(conditions)
 
     # Get ICP distribution for clicked links only
     query = f'''
@@ -395,12 +403,12 @@ def get_icp_stats():
             COUNT(DISTINCT l.link_id) as click_count
         FROM links l
         INNER JOIN clicks c ON l.link_id = c.link_id
-        WHERE 1=1 {time_filter} {campaign_condition}
+        WHERE {where_clause}
         GROUP BY l.icp
         ORDER BY click_count DESC
     '''
 
-    cur.execute(query)
+    cur.execute(query, tuple(params) if params else None)
     icp_stats = cur.fetchall()
 
     cur.close()
@@ -417,21 +425,22 @@ def get_heatmap():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Build time filter
-    time_filter = ""
-    if time_range == '24h':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '24 hours'"
-    elif time_range == '7d':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '7 days'"
-    elif time_range == '30d':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '30 days'"
+    # Build filter conditions and parameters
+    conditions = []
+    params = []
 
-    # Add campaign filter
+    if time_range == '24h':
+        conditions.append("c.clicked_at >= NOW() - INTERVAL '24 hours'")
+    elif time_range == '7d':
+        conditions.append("c.clicked_at >= NOW() - INTERVAL '7 days'")
+    elif time_range == '30d':
+        conditions.append("c.clicked_at >= NOW() - INTERVAL '30 days'")
+
     if campaign_filter:
-        if time_filter:
-            time_filter += f" AND l.campaign = '{campaign_filter}'"
-        else:
-            time_filter = f"WHERE l.campaign = '{campaign_filter}'"
+        conditions.append("l.campaign = %s")
+        params.append(campaign_filter)
+
+    where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
 
     query = f'''
         SELECT
@@ -440,12 +449,15 @@ def get_heatmap():
             COUNT(*) as click_count
         FROM clicks c
         JOIN links l ON c.link_id = l.link_id
-        {time_filter}
+        {where_clause}
         GROUP BY day_of_week, hour
         ORDER BY day_of_week, hour
     '''
 
-    cur.execute(query)
+    if params:
+        cur.execute(query, tuple(params))
+    else:
+        cur.execute(query)
     heatmap_data = cur.fetchall()
 
     cur.close()
@@ -481,10 +493,12 @@ def get_timeline():
         step_interval = '1 day'
         format_str = 'YYYY-MM-DD'
 
-    # Build campaign join condition
+    # Build campaign filter
     campaign_condition = ""
+    params = []
     if campaign_filter:
-        campaign_condition = f"AND l.campaign = '{campaign_filter}'"
+        campaign_condition = "AND l.campaign = %s"
+        params.append(campaign_filter)
 
     # Generate all periods and LEFT JOIN clicks
     query = f'''
@@ -506,7 +520,10 @@ def get_timeline():
         ORDER BY ts.period_time
     '''
 
-    cur.execute(query)
+    if params:
+        cur.execute(query, tuple(params))
+    else:
+        cur.execute(query)
     timeline_data = cur.fetchall()
 
     cur.close()
@@ -934,4 +951,5 @@ if __name__ == '__main__':
         print(f"Database initialization error: {e}")
 
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    debug_mode = os.environ.get('DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)

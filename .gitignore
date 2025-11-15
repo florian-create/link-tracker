@@ -41,3 +41,8 @@ Thumbs.db
 # Database
 *.db
 *.sqlite
+
+# Backup files
+*_backup.csv
+service-account.json
+*.json.key
