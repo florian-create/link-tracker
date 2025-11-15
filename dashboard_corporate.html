@@ -256,6 +256,42 @@
             align-items: center;
         }
 
+        .table-search {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #222;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 0.75rem 1rem;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            color: #e5e5e5;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: #fff;
+        }
+
+        .search-input::placeholder {
+            color: #666;
+        }
+
+        .search-results {
+            color: #888;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
         .table-title {
             font-size: 0.875rem;
             font-weight: 600;
@@ -834,6 +870,17 @@
                     <button class="export-btn" onclick="exportCSV()">EXPORT CSV</button>
                 </div>
             </div>
+            <!-- Search Bar -->
+            <div class="table-search">
+                <input
+                    type="text"
+                    id="tableSearch"
+                    class="search-input"
+                    placeholder="🔍 Search by name, email, ICP, campaign..."
+                    oninput="filterTable(this.value)"
+                />
+                <span id="searchResults" class="search-results"></span>
+            </div>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -869,6 +916,8 @@
         let pageSize = 100;
         let paginationData = null;
         let allClicks = [];
+        let filteredClicks = [];
+        let searchTerm = '';
         let timelineChart = null;
         let icpChart = null;
         let sankeyData = { totalLinks: 0, totalClicks: 0, uniqueVisitors: 0 };
@@ -1306,8 +1355,13 @@
                 const result = await response.json();
 
                 allClicks = result.data;
+                filteredClicks = result.data;
                 paginationData = result.pagination;
                 currentPage = page;
+
+                // Clear search when loading new data
+                document.getElementById('tableSearch').value = '';
+                searchTerm = '';
 
                 renderClicksTable();
                 renderPagination();
@@ -1319,13 +1373,21 @@
         // Render clicks table
         function renderClicksTable() {
             const tbody = document.getElementById('clicksTable');
+            const dataToShow = searchTerm ? filteredClicks : allClicks;
 
             if (!allClicks || allClicks.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="loading">No data</td></tr>';
+                document.getElementById('searchResults').textContent = '';
                 return;
             }
 
-            tbody.innerHTML = allClicks.map(click => `
+            if (searchTerm && filteredClicks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="loading">No results found</td></tr>';
+                document.getElementById('searchResults').textContent = '0 results';
+                return;
+            }
+
+            tbody.innerHTML = dataToShow.map(click => `
                 <tr>
                     <td><strong>${click.first_name} ${click.last_name}</strong></td>
                     <td>${click.email || '-'}</td>
@@ -1338,6 +1400,38 @@
                     <td><button class="delete-btn" onclick="deleteLink('${click.link_id}')">Delete</button></td>
                 </tr>
             `).join('');
+
+            // Update search results count
+            if (searchTerm) {
+                document.getElementById('searchResults').textContent = `${filteredClicks.length} result${filteredClicks.length !== 1 ? 's' : ''}`;
+            } else {
+                document.getElementById('searchResults').textContent = '';
+            }
+        }
+
+        // Filter table by search term
+        function filterTable(term) {
+            searchTerm = term.toLowerCase().trim();
+
+            if (!searchTerm) {
+                filteredClicks = allClicks;
+                renderClicksTable();
+                return;
+            }
+
+            filteredClicks = allClicks.filter(click => {
+                const fullName = `${click.first_name} ${click.last_name}`.toLowerCase();
+                const email = (click.email || '').toLowerCase();
+                const icp = (click.icp || '').toLowerCase();
+                const campaign = click.campaign.toLowerCase();
+
+                return fullName.includes(searchTerm) ||
+                       email.includes(searchTerm) ||
+                       icp.includes(searchTerm) ||
+                       campaign.includes(searchTerm);
+            });
+
+            renderClicksTable();
         }
 
         // Delete link
@@ -1607,28 +1701,38 @@
             `;
         }
 
-        // Export CSV
-        function exportCSV() {
-            const headers = ['First Name', 'Last Name', 'Email', 'ICP', 'Campaign', 'Clicks', 'First Click', 'Last Click', 'Status'];
-            const rows = allClicks.map(click => [
-                click.first_name,
-                click.last_name,
-                click.email || '',
-                click.icp || 'Non défini',
-                click.campaign,
-                click.click_count,
-                click.first_clicked ? formatDate(click.first_clicked) : '',
-                click.last_clicked ? formatDate(click.last_clicked) : '',
-                click.click_count > 0 ? 'Clicked' : 'Not clicked'
-            ]);
+        // Export CSV - exports ALL data (not just current page)
+        async function exportCSV() {
+            try {
+                // Fetch ALL clicks data (no pagination)
+                const exportUrl = currentCampaign ? `/api/clicks/export?campaign=${currentCampaign}` : '/api/clicks/export';
+                const response = await fetch(exportUrl);
+                const allData = await response.json();
 
-            const csv = [headers, ...rows].map(row => row.join(',')).join('\\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `clicks_export_${Date.now()}.csv`;
-            a.click();
+                const headers = ['First Name', 'Last Name', 'Email', 'ICP', 'Campaign', 'Clicks', 'First Click', 'Last Click', 'Status'];
+                const rows = allData.map(click => [
+                    click.first_name,
+                    click.last_name,
+                    click.email || '',
+                    click.icp || 'Non défini',
+                    click.campaign,
+                    click.click_count,
+                    click.first_clicked ? formatDate(click.first_clicked) : '',
+                    click.last_clicked ? formatDate(click.last_clicked) : '',
+                    click.click_count > 0 ? 'Clicked' : 'Not clicked'
+                ]);
+
+                const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `clicks_export_${currentCampaign || 'all'}_${Date.now()}.csv`;
+                a.click();
+            } catch (error) {
+                console.error('Error exporting CSV:', error);
+                alert('Error exporting CSV. Please try again.');
+            }
         }
 
         // Restore UI state on page load

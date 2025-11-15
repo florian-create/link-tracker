@@ -394,6 +394,47 @@ def get_clicks():
         }
     })
 
+@app.route('/api/clicks/export')
+def export_clicks():
+    """Export all click data for CSV download - no pagination"""
+    campaign = request.args.get('campaign', '')
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    query = '''
+        SELECT
+            l.link_id,
+            l.first_name,
+            l.last_name,
+            l.email,
+            l.icp,
+            l.campaign,
+            l.created_at,
+            COUNT(c.id) as click_count,
+            MAX(c.clicked_at) as last_clicked,
+            MIN(c.clicked_at) as first_clicked
+        FROM links l
+        LEFT JOIN clicks c ON l.link_id = c.link_id
+    '''
+
+    if campaign:
+        query += ' WHERE l.campaign = %s'
+        query += ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at'
+        query += ' ORDER BY click_count DESC'
+        cur.execute(query, (campaign,))
+    else:
+        query += ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at'
+        query += ' ORDER BY click_count DESC'
+        cur.execute(query)
+
+    clicks = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return jsonify(clicks)
+
 @app.route('/api/campaigns')
 def get_campaigns():
     """Get list of all campaigns"""
