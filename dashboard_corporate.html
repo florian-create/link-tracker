@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/d3@7/dist/d3.min.js"></script>
     <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -626,6 +627,83 @@
             z-index: 1000;
         }
 
+        /* Real-time notification */
+        .realtime-notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            font-size: 0.875rem;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateX(400px);
+            transition: all 0.3s ease-out;
+            max-width: 350px;
+        }
+
+        .realtime-notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .realtime-notification-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .realtime-notification-icon {
+            font-size: 1.25rem;
+        }
+
+        .realtime-notification-text {
+            flex: 1;
+        }
+
+        .realtime-status-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+        }
+
+        .realtime-status-indicator.connected {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid #4ade80;
+        }
+
+        .realtime-status-indicator.disconnected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid #f87171;
+        }
+
+        .realtime-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
         @media (max-width: 1024px) {
             .chart-grid {
                 grid-template-columns: 1fr;
@@ -856,6 +934,20 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Real-time notification -->
+    <div id="realtimeNotification" class="realtime-notification">
+        <div class="realtime-notification-content">
+            <div class="realtime-notification-icon">🔔</div>
+            <div class="realtime-notification-text" id="notificationText"></div>
+        </div>
+    </div>
+
+    <!-- Real-time status indicator -->
+    <div id="realtimeStatus" class="realtime-status-indicator disconnected">
+        <div class="realtime-pulse"></div>
+        <span id="statusText">Connecting...</span>
     </div>
 
     <div class="container">
@@ -1934,11 +2026,71 @@
             });
         }
 
+        // Real-time WebSocket connection
+        const socket = io();
+        let notificationTimeout = null;
+
+        socket.on('connect', () => {
+            console.log('✅ WebSocket connected');
+            updateConnectionStatus(true);
+        });
+
+        socket.on('disconnect', () => {
+            console.log('❌ WebSocket disconnected');
+            updateConnectionStatus(false);
+        });
+
+        socket.on('new_click', (data) => {
+            console.log('🔔 New click received:', data);
+            showNotification(data);
+
+            // Reload data if viewing same campaign or all campaigns
+            if (!currentCampaign || currentCampaign === data.campaign) {
+                // Debounce reload to avoid multiple rapid refreshes
+                clearTimeout(notificationTimeout);
+                notificationTimeout = setTimeout(() => {
+                    loadAllData();
+                }, 2000);
+            }
+        });
+
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('realtimeStatus');
+            const statusText = document.getElementById('statusText');
+
+            if (connected) {
+                status.classList.remove('disconnected');
+                status.classList.add('connected');
+                statusText.textContent = 'Live';
+            } else {
+                status.classList.remove('connected');
+                status.classList.add('disconnected');
+                statusText.textContent = 'Offline';
+            }
+        }
+
+        function showNotification(data) {
+            const notification = document.getElementById('realtimeNotification');
+            const notificationText = document.getElementById('notificationText');
+
+            notificationText.innerHTML = `
+                <strong>${data.first_name} ${data.last_name}</strong> clicked!<br>
+                <small style="opacity: 0.9;">${data.campaign} • ${data.city}, ${data.country}</small>
+            `;
+
+            notification.classList.add('show');
+
+            // Hide after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
         // Initial load
         restoreUIState();
         loadAllData();
 
-        // Auto refresh every 30s
+        // Auto refresh every 30s (as fallback)
         setInterval(loadAllData, 30000);
     </script>
 </body>

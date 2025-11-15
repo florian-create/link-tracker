@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, redirect, render_template_string
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -10,6 +11,7 @@ import requests
 
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Database configuration
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://localhost/link_tracker')
@@ -196,6 +198,17 @@ def redirect_link(link_id):
     ''', (link_id, ip_address, user_agent, country, city, referer))
 
     conn.commit()
+
+    # Emit real-time event to connected clients
+    socketio.emit('new_click', {
+        'link_id': link_id,
+        'campaign': link['campaign'],
+        'first_name': link['first_name'],
+        'last_name': link['last_name'],
+        'country': country,
+        'city': city
+    }, broadcast=True)
+
     cur.close()
     conn.close()
 
@@ -1260,4 +1273,4 @@ if __name__ == '__main__':
 
     port = int(os.environ.get('PORT', 5000))
     debug_mode = os.environ.get('DEBUG', 'False').lower() == 'true'
-    app.run(host='0.0.0.0', port=port, debug=debug_mode)
+    socketio.run(app, host='0.0.0.0', port=port, debug=debug_mode)
