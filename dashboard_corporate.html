@@ -782,6 +782,51 @@
                 grid-template-columns: 1fr !important;
             }
 
+            /* Mobile notifications */
+            .realtime-notification {
+                top: 60px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                padding: 0.75rem 1rem;
+                font-size: 0.8rem;
+            }
+
+            .realtime-status-indicator {
+                bottom: 10px;
+                right: 10px;
+                padding: 0.4rem 0.75rem;
+                font-size: 0.7rem;
+            }
+
+            /* Filter badges on mobile */
+            .table-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .table-actions {
+                width: 100%;
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            #activeFilters {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .filter-badge {
+                font-size: 0.7rem;
+                padding: 0.4rem 0.6rem;
+            }
+
+            /* Heatmap/Sankey/ICP row stacks on mobile */
+            .chart-grid + div {
+                grid-template-columns: 1fr !important;
+            }
+
             .header-content > div {
                 width: 100%;
                 max-width: 100%;
@@ -936,6 +981,54 @@
             .action-btn {
                 padding: 0.35rem 0.5rem;
                 font-size: 0.7rem;
+            }
+
+            /* Pagination on mobile */
+            .pagination-controls {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 0.75rem;
+            }
+
+            .pagination-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .page-btn {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.75rem;
+            }
+
+            /* Search bar on mobile */
+            .table-search {
+                padding: 0.75rem 1rem;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .search-results {
+                align-self: flex-start;
+                margin-top: 0.5rem;
+            }
+
+            /* Hot leads cards on mobile */
+            .hot-lead-card {
+                padding: 0.6rem;
+            }
+
+            .hot-lead-name {
+                font-size: 0.85rem;
+            }
+
+            .hot-lead-info {
+                font-size: 0.7rem;
+                gap: 0.5rem;
             }
         }
 
