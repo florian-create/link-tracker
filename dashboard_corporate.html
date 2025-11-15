@@ -1532,10 +1532,15 @@
 
                 const ctx = document.getElementById('timelineChart');
 
+                // Update existing chart instead of destroying it
                 if (timelineChart) {
-                    timelineChart.destroy();
+                    timelineChart.data.labels = data.map(d => d.period);
+                    timelineChart.data.datasets[0].data = data.map(d => d.clicks);
+                    timelineChart.update('none'); // Update without animation for better performance
+                    return;
                 }
 
+                // Create chart only if it doesn't exist
                 timelineChart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -1736,7 +1741,7 @@
         // Render clicks table
         function renderClicksTable() {
             const tbody = document.getElementById('clicksTable');
-            const dataToShow = searchTerm ? filteredClicks : allClicks;
+            const dataToShow = searchTerm || chartFilters.icp || chartFilters.person || chartFilters.date ? filteredClicks : allClicks;
 
             if (!allClicks || allClicks.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="loading">No data</td></tr>';
@@ -1744,13 +1749,17 @@
                 return;
             }
 
-            if (searchTerm && filteredClicks.length === 0) {
+            if ((searchTerm || chartFilters.icp || chartFilters.person || chartFilters.date) && filteredClicks.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="loading">No results found</td></tr>';
                 document.getElementById('searchResults').textContent = '0 results';
                 return;
             }
 
-            tbody.innerHTML = dataToShow.map(click => `
+            // Use DocumentFragment for better performance
+            const fragment = document.createDocumentFragment();
+            const tempDiv = document.createElement('div');
+
+            tempDiv.innerHTML = dataToShow.map(click => `
                 <tr>
                     <td><strong>${click.first_name} ${click.last_name}</strong></td>
                     <td>${click.email || '-'}</td>
@@ -1764,8 +1773,11 @@
                 </tr>
             `).join('');
 
+            // Batch DOM update for better performance
+            tbody.innerHTML = tempDiv.innerHTML;
+
             // Update search results count
-            if (searchTerm) {
+            if (searchTerm || chartFilters.icp || chartFilters.person || chartFilters.date) {
                 document.getElementById('searchResults').textContent = `${filteredClicks.length} result${filteredClicks.length !== 1 ? 's' : ''}`;
             } else {
                 document.getElementById('searchResults').textContent = '';
@@ -1974,13 +1986,12 @@
         function renderICPChart(icpData) {
             const ctx = document.getElementById('icpChart');
 
-            // Destroy existing chart
-            if (icpChart) {
-                icpChart.destroy();
-            }
-
             if (icpData.length === 0) {
                 // No data to display
+                if (icpChart) {
+                    icpChart.destroy();
+                    icpChart = null;
+                }
                 return;
             }
 
@@ -2017,6 +2028,17 @@
             const backgroundColors = icpData.map((_, i) => colors[i % colors.length]);
             const borderColorsMap = icpData.map((_, i) => borderColors[i % borderColors.length]);
 
+            // Update existing chart instead of destroying it
+            if (icpChart) {
+                icpChart.data.labels = labels;
+                icpChart.data.datasets[0].data = data;
+                icpChart.data.datasets[0].backgroundColor = backgroundColors;
+                icpChart.data.datasets[0].borderColor = borderColorsMap;
+                icpChart.update('none'); // Update without animation for better performance
+                return;
+            }
+
+            // Create chart only if it doesn't exist
             icpChart = new Chart(ctx, {
                 type: 'pie',
                 data: {
@@ -2286,6 +2308,8 @@
         // Real-time WebSocket connection
         const socket = io();
         let notificationTimeout = null;
+        let lastUpdateTime = 0;
+        const UPDATE_THROTTLE = 5000; // Minimum 5s between updates
 
         socket.on('connect', () => {
             console.log('✅ WebSocket connected');
@@ -2303,13 +2327,32 @@
 
             // Reload data if viewing same campaign or all campaigns
             if (!currentCampaign || currentCampaign === data.campaign) {
-                // Debounce reload to avoid multiple rapid refreshes
-                clearTimeout(notificationTimeout);
-                notificationTimeout = setTimeout(() => {
-                    loadAllData();
-                }, 2000);
+                const now = Date.now();
+
+                // Throttle updates - max 1 update every 5 seconds
+                if (now - lastUpdateTime > UPDATE_THROTTLE) {
+                    lastUpdateTime = now;
+                    // Only reload critical data, not everything
+                    loadLightweightUpdate();
+                } else {
+                    // Schedule update for later if throttled
+                    clearTimeout(notificationTimeout);
+                    notificationTimeout = setTimeout(() => {
+                        lastUpdateTime = Date.now();
+                        loadLightweightUpdate();
+                    }, UPDATE_THROTTLE - (now - lastUpdateTime));
+                }
             }
         });
+
+        // Lightweight update - only reload stats and clicks table, not charts
+        async function loadLightweightUpdate() {
+            await Promise.all([
+                loadAnalytics(),
+                loadClicks(),
+                loadHotLeads()
+            ]);
+        }
 
         function updateConnectionStatus(connected) {
             const status = document.getElementById('realtimeStatus');
@@ -2347,8 +2390,13 @@
         restoreUIState();
         loadAllData();
 
-        // Auto refresh every 30s (as fallback)
-        setInterval(loadAllData, 30000);
+        // Reduced auto refresh to every 60s (instead of 30s)
+        // Charts don't need to refresh that often
+        setInterval(() => {
+            loadAnalytics();
+            loadClicks();
+            loadHotLeads();
+        }, 60000);
     </script>
 </body>
 </html>
