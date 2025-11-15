@@ -1065,8 +1065,16 @@
                 });
 
                 if (response.ok) {
-                    // Reload data
-                    loadAllData();
+                    // Reload only necessary data without resetting campaign selection
+                    await Promise.all([
+                        loadAnalytics(),
+                        loadTimeline(),
+                        loadHeatmap(),
+                        loadClicks(),
+                        loadICPStats()
+                    ]);
+                    // Only reload campaigns if we might have deleted the last link in a campaign
+                    await loadCampaigns();
                 } else {
                     alert('Error deleting link');
                 }
@@ -1083,6 +1091,10 @@
                 const campaigns = await response.json();
 
                 const select = document.getElementById('globalCampaignFilter');
+
+                // Save current selection
+                const previousSelection = currentCampaign || select.value;
+
                 // Clear existing options
                 select.innerHTML = '';
                 campaigns.forEach(campaign => {
@@ -1092,8 +1104,12 @@
                     select.appendChild(option);
                 });
 
-                // Set first campaign as default
-                if (campaigns.length > 0) {
+                // Restore previous selection if it still exists
+                if (previousSelection && campaigns.includes(previousSelection)) {
+                    currentCampaign = previousSelection;
+                    select.value = previousSelection;
+                } else if (campaigns.length > 0) {
+                    // Only set first campaign as default on initial load
                     currentCampaign = campaigns[0];
                     select.value = campaigns[0];
                 }
