@@ -592,8 +592,9 @@
     </div>
 
     <script>
-        let currentRange = '30d';
-        let currentCampaign = '';
+        // Restore saved state from localStorage
+        let currentRange = localStorage.getItem('selectedRange') || '30d';
+        let currentCampaign = localStorage.getItem('selectedCampaign') || '';
         let allClicks = [];
         let timelineChart = null;
         let icpChart = null;
@@ -605,6 +606,7 @@
                 document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentRange = btn.dataset.range;
+                localStorage.setItem('selectedRange', currentRange);
                 loadAllData();
             });
         });
@@ -612,6 +614,7 @@
         // Global campaign filter
         document.getElementById('globalCampaignFilter').addEventListener('change', (e) => {
             currentCampaign = e.target.value;
+            localStorage.setItem('selectedCampaign', currentCampaign);
             loadAllData();
         });
 
@@ -1108,10 +1111,12 @@
                 if (previousSelection && campaigns.includes(previousSelection)) {
                     currentCampaign = previousSelection;
                     select.value = previousSelection;
+                    localStorage.setItem('selectedCampaign', currentCampaign);
                 } else if (campaigns.length > 0) {
                     // Only set first campaign as default on initial load
                     currentCampaign = campaigns[0];
                     select.value = campaigns[0];
+                    localStorage.setItem('selectedCampaign', currentCampaign);
                 }
             } catch (error) {
                 console.error('Error loading campaigns:', error);
@@ -1271,7 +1276,20 @@
             a.click();
         }
 
+        // Restore UI state on page load
+        function restoreUIState() {
+            // Restore time range button active state
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                if (btn.dataset.range === currentRange) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
         // Initial load
+        restoreUIState();
         loadAllData();
 
         // Auto refresh every 30s
