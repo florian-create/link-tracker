@@ -435,6 +435,235 @@ def export_clicks():
 
     return jsonify(clicks)
 
+@app.route('/api/stats/trends')
+def get_trends():
+    """Get trend statistics comparing current vs previous period"""
+    time_range = request.args.get('range', 'all')
+    campaign_filter = request.args.get('campaign', '')
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    # Define intervals
+    intervals = {
+        '24h': ('24 hours', '48 hours'),
+        '7d': ('7 days', '14 days'),
+        '30d': ('30 days', '60 days'),
+        'all': ('90 days', '180 days')
+    }
+
+    current_interval, previous_interval = intervals.get(time_range, intervals['all'])
+
+    params_current = []
+    params_previous = []
+    campaign_condition = ''
+
+    if campaign_filter:
+        campaign_condition = 'AND l.campaign = %s'
+        params_current.append(campaign_filter)
+        params_previous.append(campaign_filter)
+
+    # Current period stats
+    query_current = f'''
+        SELECT
+            COUNT(DISTINCT c.link_id) as unique_clicks,
+            COUNT(c.id) as total_clicks
+        FROM clicks c
+        JOIN links l ON c.link_id = l.link_id
+        WHERE c.clicked_at >= NOW() - INTERVAL '{current_interval}'
+        {campaign_condition}
+    '''
+
+    # Previous period stats
+    query_previous = f'''
+        SELECT
+            COUNT(DISTINCT c.link_id) as unique_clicks,
+            COUNT(c.id) as total_clicks
+        FROM clicks c
+        JOIN links l ON c.link_id = l.link_id
+        WHERE c.clicked_at >= NOW() - INTERVAL '{previous_interval}'
+        AND c.clicked_at < NOW() - INTERVAL '{current_interval}'
+        {campaign_condition}
+    '''
+
+    cur.execute(query_current, tuple(params_current) if params_current else None)
+    current = cur.fetchone()
+
+    cur.execute(query_previous, tuple(params_previous) if params_previous else None)
+    previous = cur.fetchone()
+
+    # Calculate percentage changes
+    def calc_change(current_val, previous_val):
+        if previous_val == 0:
+            return 100 if current_val > 0 else 0
+        return round(((current_val - previous_val) / previous_val) * 100, 1)
+
+    cur.close()
+    conn.close()
+
+    return jsonify({
+        'current': {
+            'total_clicks': current['total_clicks'] or 0,
+            'unique_clicks': current['unique_clicks'] or 0
+        },
+        'previous': {
+            'total_clicks': previous['total_clicks'] or 0,
+            'unique_clicks': previous['unique_clicks'] or 0
+        },
+        'changes': {
+            'total_clicks': calc_change(current['total_clicks'] or 0, previous['total_clicks'] or 0),
+            'unique_clicks': calc_change(current['unique_clicks'] or 0, previous['unique_clicks'] or 0)
+        }
+    })
+
+@app.route('/api/stats/icp')
+def get_icp_comparison():
+    """Get ICP comparison statistics"""
+    campaign_filter = request.args.get('campaign', '')
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    params = []
+    campaign_condition = ''
+
+    if campaign_filter:
+        campaign_condition = 'WHERE l.campaign = %s'
+        params.append(campaign_filter)
+
+    query = f'''
+        SELECT
+            COALESCE(NULLIF(l.icp, ''), 'Non défini') as icp,
+            COUNT(DISTINCT l.link_id) as total_links,
+            COUNT(c.id) as total_clicks,
+            COUNT(DISTINCT CASE WHEN c.id IS NOT NULL THEN l.link_id END) as links_clicked,
+            ROUND(
+                CASE
+                    WHEN COUNT(DISTINCT l.link_id) > 0
+                    THEN (COUNT(DISTINCT CASE WHEN c.id IS NOT NULL THEN l.link_id END)::float / COUNT(DISTINCT l.link_id) * 100)
+                    ELSE 0
+                END, 1
+            ) as click_rate
+        FROM links l
+        LEFT JOIN clicks c ON l.link_id = c.link_id
+        {campaign_condition}
+        GROUP BY l.icp
+        ORDER BY total_clicks DESC
+    '''
+
+    cur.execute(query, tuple(params) if params else None)
+    icp_stats = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return jsonify(icp_stats)
+
+@app.route('/api/stats/hot-leads')
+def get_hot_leads():
+    """Get hot leads (prospects with 3+ clicks)"""
+    campaign_filter = request.args.get('campaign', '')
+    min_clicks = int(request.args.get('min_clicks', 3))
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    params = [min_clicks]
+    campaign_condition = ''
+
+    if campaign_filter:
+        campaign_condition = 'AND l.campaign = %s'
+        params.append(campaign_filter)
+
+    query = f'''
+        SELECT
+            l.link_id,
+            l.first_name,
+            l.last_name,
+            l.email,
+            l.icp,
+            l.campaign,
+            COUNT(c.id) as click_count,
+            MAX(c.clicked_at) as last_clicked,
+            MIN(c.clicked_at) as first_clicked
+        FROM links l
+        JOIN clicks c ON l.link_id = c.link_id
+        {campaign_condition}
+        GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign
+        HAVING COUNT(c.id) >= %s
+        ORDER BY click_count DESC, last_clicked DESC
+        LIMIT 20
+    '''
+
+    if campaign_filter:
+        cur.execute(query, (campaign_filter, min_clicks))
+    else:
+        cur.execute(query, (min_clicks,))
+
+    hot_leads = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return jsonify(hot_leads)
+
+@app.route('/api/stats/response-time')
+def get_response_time():
+    """Get average response time statistics"""
+    campaign_filter = request.args.get('campaign', '')
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    params = []
+    campaign_condition = ''
+
+    if campaign_filter:
+        campaign_condition = 'WHERE l.campaign = %s'
+        params.append(campaign_filter)
+
+    query = f'''
+        SELECT
+            AVG(EXTRACT(EPOCH FROM (MIN(c.clicked_at) - l.created_at))) as avg_first_click_seconds,
+            COUNT(DISTINCT CASE WHEN click_count > 1 THEN link_id END)::float / NULLIF(COUNT(DISTINCT link_id), 0) * 100 as reclick_rate
+        FROM (
+            SELECT
+                l.link_id,
+                l.created_at,
+                COUNT(c.id) as click_count
+            FROM links l
+            LEFT JOIN clicks c ON l.link_id = c.link_id
+            {campaign_condition}
+            GROUP BY l.link_id, l.created_at
+        ) subquery
+        LEFT JOIN clicks c ON subquery.link_id = c.link_id
+        LEFT JOIN links l ON subquery.link_id = l.link_id
+        WHERE c.id IS NOT NULL
+    '''
+
+    cur.execute(query, tuple(params) if params else None)
+    result = cur.fetchone()
+
+    avg_seconds = result['avg_first_click_seconds']
+    reclick_rate = result['reclick_rate'] or 0
+
+    # Convert seconds to human readable format
+    if avg_seconds:
+        hours = int(avg_seconds // 3600)
+        minutes = int((avg_seconds % 3600) // 60)
+        avg_time_str = f"{hours}h {minutes}min" if hours > 0 else f"{minutes}min"
+    else:
+        avg_time_str = "N/A"
+
+    cur.close()
+    conn.close()
+
+    return jsonify({
+        'avg_first_click_seconds': avg_seconds,
+        'avg_first_click': avg_time_str,
+        'reclick_rate': round(reclick_rate, 1)
+    })
+
 @app.route('/api/campaigns')
 def get_campaigns():
     """Get list of all campaigns"""
