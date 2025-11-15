@@ -321,12 +321,32 @@ def get_analytics():
 
 @app.route('/api/clicks')
 def get_clicks():
-    """Get detailed click data with person info"""
+    """Get detailed click data with person info - with pagination"""
     campaign = request.args.get('campaign', '')
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 100))  # Default 100 items per page
+
+    # Validate pagination parameters
+    if page < 1:
+        page = 1
+    if page_size < 1 or page_size > 500:  # Max 500 items per page
+        page_size = 100
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
+    # Count total results (for pagination info)
+    count_query = 'SELECT COUNT(*) as total FROM links l'
+    if campaign:
+        count_query += ' WHERE l.campaign = %s'
+        cur.execute(count_query, (campaign,))
+    else:
+        cur.execute(count_query)
+
+    total_count = cur.fetchone()['total']
+    total_pages = (total_count + page_size - 1) // page_size  # Ceiling division
+
+    # Get paginated results
     query = '''
         SELECT
             l.link_id,
@@ -343,18 +363,36 @@ def get_clicks():
         LEFT JOIN clicks c ON l.link_id = c.link_id
     '''
 
+    params = []
     if campaign:
         query += ' WHERE l.campaign = %s'
-        cur.execute(query + ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at ORDER BY click_count DESC', (campaign,))
-    else:
-        cur.execute(query + ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at ORDER BY click_count DESC')
+        params.append(campaign)
 
+    query += ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at'
+    query += ' ORDER BY click_count DESC'
+
+    # Add pagination
+    offset = (page - 1) * page_size
+    query += ' LIMIT %s OFFSET %s'
+    params.extend([page_size, offset])
+
+    cur.execute(query, tuple(params) if params else None)
     clicks = cur.fetchall()
 
     cur.close()
     conn.close()
 
-    return jsonify(clicks)
+    return jsonify({
+        'data': clicks,
+        'pagination': {
+            'page': page,
+            'page_size': page_size,
+            'total_items': total_count,
+            'total_pages': total_pages,
+            'has_prev': page > 1,
+            'has_next': page < total_pages
+        }
+    })
 
 @app.route('/api/campaigns')
 def get_campaigns():
