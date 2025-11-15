@@ -1271,16 +1271,20 @@
 
         // Load all data
         async function loadAllData() {
-            await Promise.all([
-                loadAnalytics(),
-                loadTimeline(),
-                loadHeatmap(),
-                loadClicks(),
-                loadCampaigns(),
-                loadICPStats(),
-                loadHotLeads(),
-                loadICPComparison()
-            ]);
+            try {
+                await Promise.all([
+                    loadAnalytics().catch(e => console.warn('Analytics failed:', e)),
+                    loadTimeline().catch(e => console.warn('Timeline failed:', e)),
+                    loadHeatmap().catch(e => console.warn('Heatmap failed:', e)),
+                    loadClicks().catch(e => console.warn('Clicks failed:', e)),
+                    loadCampaigns().catch(e => console.warn('Campaigns failed:', e)),
+                    loadICPStats().catch(e => console.warn('ICP stats failed:', e)),
+                    loadHotLeads().catch(e => console.warn('Hot leads failed:', e)),
+                    loadICPComparison().catch(e => console.warn('ICP comparison failed:', e))
+                ]);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
         }
 
         // Load analytics with trends and response time
@@ -1292,16 +1296,30 @@
                     url += `&campaign=${currentCampaign}`;
                 }
 
-                // Load trends and response time in parallel
-                const [analyticsRes, trendsRes, responseTimeRes] = await Promise.all([
-                    fetch(url),
-                    fetch(`/api/stats/trends?range=${currentRange}${currentCampaign ? '&campaign=' + currentCampaign : ''}`),
-                    fetch(`/api/stats/response-time${currentCampaign ? '?campaign=' + currentCampaign : ''}`)
-                ]);
-
+                const analyticsRes = await fetch(url);
                 const data = await analyticsRes.json();
-                const trends = await trendsRes.json();
-                const responseTime = await responseTimeRes.json();
+
+                // Try to load trends and response time, but don't block if they fail
+                let trends = { changes: { total_clicks: 0, unique_clicks: 0 } };
+                let responseTime = { avg_first_click: 'N/A', reclick_rate: 0 };
+
+                try {
+                    const trendsRes = await fetch(`/api/stats/trends?range=${currentRange}${currentCampaign ? '&campaign=' + currentCampaign : ''}`);
+                    if (trendsRes.ok) {
+                        trends = await trendsRes.json();
+                    }
+                } catch (e) {
+                    console.warn('Failed to load trends:', e);
+                }
+
+                try {
+                    const responseTimeRes = await fetch(`/api/stats/response-time${currentCampaign ? '?campaign=' + currentCampaign : ''}`);
+                    if (responseTimeRes.ok) {
+                        responseTime = await responseTimeRes.json();
+                    }
+                } catch (e) {
+                    console.warn('Failed to load response time:', e);
+                }
 
                 // Helper to format trend indicator
                 const getTrendHTML = (change) => {
@@ -2106,6 +2124,12 @@
             try {
                 const url = `/api/stats/hot-leads${currentCampaign ? '?campaign=' + currentCampaign : ''}`;
                 const response = await fetch(url);
+
+                if (!response.ok) {
+                    document.getElementById('hotLeadsContainer').innerHTML = '<div class="loading">Hot leads unavailable</div>';
+                    return;
+                }
+
                 const hotLeads = await response.json();
 
                 const container = document.getElementById('hotLeadsContainer');
@@ -2138,6 +2162,12 @@
             try {
                 const url = `/api/stats/icp${currentCampaign ? '?campaign=' + currentCampaign : ''}`;
                 const response = await fetch(url);
+
+                if (!response.ok) {
+                    document.querySelector('#icpComparisonTable tbody').innerHTML = '<tr><td colspan="4" class="loading">ICP data unavailable</td></tr>';
+                    return;
+                }
+
                 const icpData = await response.json();
 
                 const tbody = document.querySelector('#icpComparisonTable tbody');
@@ -2306,52 +2336,71 @@
         }
 
         // Real-time WebSocket connection
-        const socket = io();
+        let socket = null;
         let notificationTimeout = null;
         let lastUpdateTime = 0;
         const UPDATE_THROTTLE = 5000; // Minimum 5s between updates
 
-        socket.on('connect', () => {
-            console.log('✅ WebSocket connected');
-            updateConnectionStatus(true);
-        });
+        try {
+            socket = io({
+                transports: ['websocket', 'polling'],
+                timeout: 10000
+            });
 
-        socket.on('disconnect', () => {
-            console.log('❌ WebSocket disconnected');
-            updateConnectionStatus(false);
-        });
+            socket.on('connect', () => {
+                console.log('✅ WebSocket connected');
+                updateConnectionStatus(true);
+            });
 
-        socket.on('new_click', (data) => {
-            console.log('🔔 New click received:', data);
-            showNotification(data);
+            socket.on('disconnect', () => {
+                console.log('❌ WebSocket disconnected');
+                updateConnectionStatus(false);
+            });
 
-            // Reload data if viewing same campaign or all campaigns
-            if (!currentCampaign || currentCampaign === data.campaign) {
-                const now = Date.now();
+            socket.on('connect_error', (error) => {
+                console.warn('⚠️ WebSocket connection error:', error);
+                updateConnectionStatus(false);
+            });
 
-                // Throttle updates - max 1 update every 5 seconds
-                if (now - lastUpdateTime > UPDATE_THROTTLE) {
-                    lastUpdateTime = now;
-                    // Only reload critical data, not everything
-                    loadLightweightUpdate();
-                } else {
-                    // Schedule update for later if throttled
-                    clearTimeout(notificationTimeout);
-                    notificationTimeout = setTimeout(() => {
-                        lastUpdateTime = Date.now();
+            socket.on('new_click', (data) => {
+                console.log('🔔 New click received:', data);
+                showNotification(data);
+
+                // Reload data if viewing same campaign or all campaigns
+                if (!currentCampaign || currentCampaign === data.campaign) {
+                    const now = Date.now();
+
+                    // Throttle updates - max 1 update every 5 seconds
+                    if (now - lastUpdateTime > UPDATE_THROTTLE) {
+                        lastUpdateTime = now;
+                        // Only reload critical data, not everything
                         loadLightweightUpdate();
-                    }, UPDATE_THROTTLE - (now - lastUpdateTime));
+                    } else {
+                        // Schedule update for later if throttled
+                        clearTimeout(notificationTimeout);
+                        notificationTimeout = setTimeout(() => {
+                            lastUpdateTime = Date.now();
+                            loadLightweightUpdate();
+                        }, UPDATE_THROTTLE - (now - lastUpdateTime));
+                    }
                 }
-            }
-        });
+            });
+        } catch (error) {
+            console.warn('⚠️ WebSocket unavailable:', error);
+            updateConnectionStatus(false);
+        }
 
         // Lightweight update - only reload stats and clicks table, not charts
         async function loadLightweightUpdate() {
-            await Promise.all([
-                loadAnalytics(),
-                loadClicks(),
-                loadHotLeads()
-            ]);
+            try {
+                await Promise.all([
+                    loadAnalytics().catch(e => console.warn('Analytics update failed:', e)),
+                    loadClicks().catch(e => console.warn('Clicks update failed:', e)),
+                    loadHotLeads().catch(e => console.warn('Hot leads update failed:', e))
+                ]);
+            } catch (error) {
+                console.warn('Lightweight update failed:', error);
+            }
         }
 
         function updateConnectionStatus(connected) {
@@ -2393,9 +2442,9 @@
         // Reduced auto refresh to every 60s (instead of 30s)
         // Charts don't need to refresh that often
         setInterval(() => {
-            loadAnalytics();
-            loadClicks();
-            loadHotLeads();
+            loadAnalytics().catch(e => console.warn('Auto-refresh analytics failed:', e));
+            loadClicks().catch(e => console.warn('Auto-refresh clicks failed:', e));
+            loadHotLeads().catch(e => console.warn('Auto-refresh hot leads failed:', e));
         }, 60000);
     </script>
 </body>
