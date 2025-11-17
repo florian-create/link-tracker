@@ -133,6 +133,17 @@ def logout():
     session.clear()
     return redirect('/login')
 
+@app.route('/recrutement')
+@app.route('/wesser-recrutement')
+def wesser_redirect():
+    """Wesser recruitment redirect page"""
+    try:
+        with open('redirect_wesser.html', 'r') as f:
+            return f.read()
+    except:
+        # Fallback redirect if file not found
+        return redirect('https://job.wesser.fr/jobs')
+
 @app.route('/')
 def index():
     """Dashboard homepage - protected"""
