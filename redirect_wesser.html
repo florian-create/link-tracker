@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rejoignez Wesser - Leader européen du fundraising</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #002c5c 0%, #004080 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 50px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .logo {
+            font-family: 'Archivo', sans-serif;
+            font-size: 48px;
+            font-weight: 800;
+            color: #002c5c;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .category {
+            display: inline-block;
+            background: #002c5c;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        h1 {
+            font-family: 'Archivo', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #002c5c;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .feature {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 44, 92, 0.15);
+            background: #fff;
+        }
+
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            font-family: 'Archivo', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #002c5c;
+            margin-bottom: 5px;
+        }
+
+        .feature-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: #002c5c;
+            color: white;
+            padding: 18px 50px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-family: 'Archivo', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 44, 92, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 44, 92, 0.4);
+            background: #003d70;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 30px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .logo {
+                font-size: 36px;
+            }
+        }
+
+        .loading {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #002c5c;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">WESSER</div>
+        <div class="category">Recrutement</div>
+
+        <h1>Rejoignez le leader européen du fundraising face à face</h1>
+
+        <p class="subtitle">
+            Depuis 1968, Wesser est en partenariat avec des organisations de renommée mondiale telles que Médecins Sans Frontières, WWF et UNICEF, nous connectons des personnes passionnées à des causes qui transforment des vies et préservent la planète.
+        </p>
+
+        <a href="https://job.wesser.fr/jobs" class="cta-button">Postule ici</a>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🌍</div>
+                <div class="feature-title">ONG de renom</div>
+                <div class="feature-text">Représentez MSF, WWF et UNICEF</div>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">🏆</div>
+                <div class="feature-title">Rémunération attractive</div>
+                <div class="feature-text">Jusqu'à 4'000€ brut par mois</div>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">🤝</div>
+                <div class="feature-title">Grand réseau européen</div>
+                <div class="feature-text">Plus de 50 ans d'expérience</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            &copy; 2025 Wesser - Tous droits réservés
+        </div>
+    </div>
+
+    <script>
+        // Redirection automatique après 3 secondes (optionnel)
+        // setTimeout(() => {
+        //     window.location.href = 'https://job.wesser.fr/jobs';
+        // }, 3000);
+    </script>
+</body>
+</html>
