@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wesser Recrutement</title>
+    <title>Wesser - Rejoignez-nous</title>
     <link rel="icon" href="https://images.teamtailor-cdn.com/images/s3/teamtailor-production/favicon-v3/image_uploads/f8378c2d-b9ed-4fc3-b336-9311943a070c/original.png">
 
     <style>
@@ -19,6 +19,16 @@
             unicode-range: U+0020-007F,U+2000-206F;
         }
 
+        :root {
+            --company-primary-bg-color: 255, 255, 255;
+            --company-secondary-bg-color: 90, 118, 132;
+            --company-primary-text-color: 37, 37, 37;
+            --company-secondary-text-color: 243, 242, 242;
+            --company-button-text-color: 255, 255, 255;
+            --company-button-bg-color: 0, 44, 92;
+            --company-border-radius: 20px;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -27,120 +37,240 @@
 
         body {
             font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #ffffff;
-            color: #252525;
+            font-weight: 300;
+            background: rgb(var(--company-primary-bg-color));
+            color: rgb(var(--company-primary-text-color));
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
         }
 
-        .container {
-            max-width: 700px;
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .logo-header {
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-header img {
+            max-width: 200px;
+            max-height: 90%;
+        }
+
+        /* Hero Section */
+        .hero {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 2rem 4rem;
+            background: linear-gradient(135deg, rgba(0, 192, 255, 0.05) 0%, rgba(90, 118, 132, 0.08) 100%);
+        }
+
+        .hero-content {
+            max-width: 750px;
             width: 100%;
             text-align: center;
         }
 
-        .logo {
-            margin-bottom: 3rem;
-        }
-
-        .logo img {
-            max-width: 250px;
-            width: 100%;
-            height: auto;
+        .category {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: rgb(var(--company-secondary-bg-color));
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 2rem;
         }
 
         h1 {
             font-family: 'Archivo', sans-serif;
             font-weight: 500;
-            font-size: 2.5rem;
+            font-size: clamp(2rem, 5vw, 4rem);
             line-height: 1.2;
             margin-bottom: 1.5rem;
-            color: #252525;
+            color: rgb(var(--company-primary-text-color));
         }
 
-        p {
-            font-size: 1.125rem;
+        .subtitle {
+            font-size: 1.25rem;
             line-height: 1.6;
-            margin-bottom: 2.5rem;
-            color: #5a7684;
+            margin-bottom: 3rem;
+            color: rgb(var(--company-secondary-bg-color));
             font-weight: 300;
         }
 
         .cta-button {
             display: inline-block;
-            background: #002c5c;
-            color: #ffffff;
-            padding: 1rem 3rem;
-            border-radius: 20px;
+            background: rgb(var(--company-button-bg-color));
+            color: rgb(var(--company-button-text-color));
+            padding: 1rem 3.5rem;
+            border-radius: var(--company-border-radius);
             text-decoration: none;
             font-weight: 600;
             font-size: 1rem;
             transition: all 0.3s ease;
-            border: none;
+            border: 2px solid transparent;
             cursor: pointer;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            box-shadow: 0 4px 20px rgba(0, 44, 92, 0.2);
+            min-width: 220px;
         }
 
         .cta-button:hover {
-            background: #003875;
+            background: rgb(0, 56, 117);
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 44, 92, 0.3);
+            box-shadow: 0 8px 30px rgba(0, 44, 92, 0.35);
         }
 
         .cta-button:active {
             transform: translateY(0);
         }
 
+        /* Features */
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            text-align: center;
+            max-width: 200px;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: rgb(var(--company-primary-text-color));
+        }
+
+        .feature-text {
+            font-size: 0.875rem;
+            color: rgb(var(--company-secondary-bg-color));
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.875rem;
+            color: rgba(var(--company-primary-text-color), 0.6);
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
         @media (max-width: 768px) {
+            .hero {
+                padding: 100px 1.5rem 3rem;
+            }
+
             h1 {
                 font-size: 2rem;
             }
 
-            p {
-                font-size: 1rem;
-            }
-
-            .logo img {
-                max-width: 200px;
+            .subtitle {
+                font-size: 1.125rem;
             }
 
             .cta-button {
-                padding: 0.875rem 2rem;
+                padding: 0.875rem 2.5rem;
                 font-size: 0.9rem;
+            }
+
+            .features {
+                gap: 2rem;
+                margin-top: 3rem;
             }
         }
 
         @media (max-width: 480px) {
             h1 {
-                font-size: 1.5rem;
+                font-size: 1.75rem;
             }
 
-            .logo {
+            .subtitle {
+                font-size: 1rem;
                 margin-bottom: 2rem;
             }
 
-            p {
-                margin-bottom: 2rem;
+            .features {
+                flex-direction: column;
+                align-items: center;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">
+    <!-- Header -->
+    <header class="header">
+        <div class="logo-header">
             <img src="https://images.teamtailor-cdn.com/images/s3/teamtailor-production/logotype-v3/image_uploads/e2eb55aa-5c73-4dc6-ba4f-34134a757618/original.png" alt="Wesser">
         </div>
+    </header>
 
-        <h1>Bienvenue chez Wesser</h1>
+    <!-- Hero Section -->
+    <main class="hero">
+        <div class="hero-content">
+            <div class="category">Recrutement</div>
 
-        <p>Découvrez nos opportunités de carrière et rejoignez le leader européen du fundraising face à face.</p>
+            <h1>Rejoignez le leader européen du fundraising</h1>
 
-        <a href="https://job.wesser.fr/jobs" class="cta-button">Voir les offres d'emploi</a>
-    </div>
+            <p class="subtitle">
+                Depuis 1968, nous connectons des personnes passionnées à des causes qui transforment des vies.
+                Découvrez nos opportunités de carrière.
+            </p>
+
+            <a href="https://job.wesser.fr/jobs" class="cta-button">Voir nos offres</a>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🌍</div>
+                    <div class="feature-title">ONG de renom</div>
+                    <div class="feature-text">MSF, WWF, UNICEF</div>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">🎓</div>
+                    <div class="feature-title">Formation IA</div>
+                    <div class="feature-text">Plateforme innovante</div>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">💰</div>
+                    <div class="feature-title">Rémunération</div>
+                    <div class="feature-text">Jusqu'à 4000€/mois</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2025 Wesser - Leader européen du fundraising face à face</p>
+    </footer>
 </body>
 </html>
