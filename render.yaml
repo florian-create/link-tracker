@@ -13,6 +13,12 @@ services:
         value: 3.11.0
       - key: DEBUG
         value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DASHBOARD_USERNAME
+        value: admin_aura_2025
+      - key: DASHBOARD_PASSWORD
+        value: Tr4ck!ng$ecur3#2025
 
   # Daily backup to Google Drive - runs at 2 AM UTC
   - type: cron
