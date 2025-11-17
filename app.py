@@ -146,7 +146,18 @@ def wesser_redirect():
 
 @app.route('/')
 def index():
-    """Dashboard homepage - protected"""
+    """Dashboard homepage - protected, or Wesser redirect if on wesser-recrutement.fr"""
+    # Check if accessed via wesser-recrutement.fr domain
+    host = request.host.lower()
+    if 'wesser-recrutement' in host:
+        # Serve Wesser redirect page without authentication
+        try:
+            with open('redirect_wesser.html', 'r') as f:
+                return f.read()
+        except:
+            return redirect('https://job.wesser.fr/jobs')
+
+    # Normal dashboard - requires authentication
     if not is_authenticated():
         return redirect('/login')
 
