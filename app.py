@@ -491,7 +491,7 @@ def get_timeline():
     if campaign_filter:
         campaign_condition = f"AND l.campaign = '{campaign_filter}'"
 
-    # Generate all periods and LEFT JOIN clicks
+    # Generate all periods and LEFT JOIN with first clicks per unique visitor
     query = f'''
         WITH time_series AS (
             SELECT generate_series(
@@ -499,14 +499,23 @@ def get_timeline():
                 NOW(),
                 INTERVAL '{step_interval}'
             ) AS period_time
+        ),
+        first_clicks AS (
+            SELECT DISTINCT ON (c.ip_address)
+                c.id,
+                c.clicked_at,
+                c.link_id
+            FROM clicks c
+            JOIN links l ON c.link_id = l.link_id
+            WHERE c.clicked_at >= NOW() - INTERVAL '{start_interval}'
+            {campaign_condition}
+            ORDER BY c.ip_address, c.clicked_at ASC
         )
         SELECT
             TO_CHAR(ts.period_time, '{format_str}') as period,
-            COALESCE(COUNT(c.id), 0) as clicks
+            COALESCE(COUNT(fc.id), 0) as clicks
         FROM time_series ts
-        LEFT JOIN clicks c ON TO_CHAR(c.clicked_at, '{format_str}') = TO_CHAR(ts.period_time, '{format_str}')
-        LEFT JOIN links l ON c.link_id = l.link_id
-        WHERE 1=1 {campaign_condition}
+        LEFT JOIN first_clicks fc ON TO_CHAR(fc.clicked_at, '{format_str}') = TO_CHAR(ts.period_time, '{format_str}')
         GROUP BY period, ts.period_time
         ORDER BY ts.period_time
     '''
