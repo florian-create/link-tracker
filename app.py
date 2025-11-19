@@ -417,30 +417,35 @@ def get_heatmap():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Build time filter
-    time_filter = ""
+    # Build WHERE clause for first_clicks CTE
+    where_conditions = []
     if time_range == '24h':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '24 hours'"
+        where_conditions.append("c.clicked_at >= NOW() - INTERVAL '24 hours'")
     elif time_range == '7d':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '7 days'"
+        where_conditions.append("c.clicked_at >= NOW() - INTERVAL '7 days'")
     elif time_range == '30d':
-        time_filter = "WHERE c.clicked_at >= NOW() - INTERVAL '30 days'"
+        where_conditions.append("c.clicked_at >= NOW() - INTERVAL '30 days'")
 
-    # Add campaign filter
     if campaign_filter:
-        if time_filter:
-            time_filter += f" AND l.campaign = '{campaign_filter}'"
-        else:
-            time_filter = f"WHERE l.campaign = '{campaign_filter}'"
+        where_conditions.append(f"l.campaign = '{campaign_filter}'")
 
+    where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+
+    # Count only the first click per unique visitor (ip_address)
     query = f'''
+        WITH first_clicks AS (
+            SELECT DISTINCT ON (c.ip_address)
+                c.clicked_at
+            FROM clicks c
+            JOIN links l ON c.link_id = l.link_id
+            {where_clause}
+            ORDER BY c.ip_address, c.clicked_at ASC
+        )
         SELECT
-            EXTRACT(DOW FROM c.clicked_at) as day_of_week,
-            EXTRACT(HOUR FROM c.clicked_at) as hour,
+            EXTRACT(DOW FROM fc.clicked_at) as day_of_week,
+            EXTRACT(HOUR FROM fc.clicked_at) as hour,
             COUNT(*) as click_count
-        FROM clicks c
-        JOIN links l ON c.link_id = l.link_id
-        {time_filter}
+        FROM first_clicks fc
         GROUP BY day_of_week, hour
         ORDER BY day_of_week, hour
     '''
