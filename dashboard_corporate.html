@@ -717,7 +717,7 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-header">
-                    <div class="chart-title">Click Timeline</div>
+                    <div class="chart-title">Click Timeline (Unique Visitors)</div>
                 </div>
                 <canvas id="timelineChart"></canvas>
             </div>
@@ -736,7 +736,7 @@
         <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 1.5rem; margin-bottom: 1.5rem;">
             <div class="chart-card" style="min-height: 700px; display: flex; flex-direction: column; width: fit-content;">
                 <div class="chart-header">
-                    <div class="chart-title">Click Activity Heatmap</div>
+                    <div class="chart-title">Click Activity Heatmap (Unique Visitors)</div>
                 </div>
                 <div id="heatmapContainer" style="flex: 1; display: flex; align-items: center;">
                     <div class="loading">Loading heatmap...</div>
@@ -1064,7 +1064,7 @@
                     data: {
                         labels: data.map(d => d.period),
                         datasets: [{
-                            label: 'Clicks',
+                            label: 'Unique Visitors (First Click)',
                             data: data.map(d => d.clicks),
                             borderColor: '#fff',
                             backgroundColor: 'rgba(255, 255, 255, 0.1)',
