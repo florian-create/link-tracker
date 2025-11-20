@@ -105,6 +105,16 @@ def index():
     except:
         return render_template_string(DASHBOARD_HTML)
 
+@app.route('/api/version')
+def get_version():
+    """Get API version to verify deployment"""
+    return jsonify({
+        'version': '2.0-unique-visitors',
+        'heatmap': 'Uses DISTINCT ON ip_address for unique visitors',
+        'timeline': 'Uses DISTINCT ON ip_address for unique visitors',
+        'deployed_at': datetime.now().isoformat()
+    })
+
 @app.route('/api/create-link', methods=['POST'])
 def create_link():
     """Create a new tracked link - Called from Clay"""
