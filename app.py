@@ -427,37 +427,36 @@ def get_heatmap():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Build campaign filter for CTE
-    campaign_where = ""
+    # Build WHERE clause combining campaign and time filters
+    where_conditions = []
     if campaign_filter:
-        campaign_where = f"WHERE l.campaign = '{campaign_filter}'"
+        where_conditions.append(f"l.campaign = '{campaign_filter}'")
 
-    # Build time filter for final SELECT
-    time_filter = ""
+    # Add time filter to the CTE to only get first clicks within the period
     if time_range == '24h':
-        time_filter = "WHERE fc.clicked_at >= NOW() - INTERVAL '24 hours'"
+        where_conditions.append("c.clicked_at >= NOW() - INTERVAL '24 hours'")
     elif time_range == '7d':
-        time_filter = "WHERE fc.clicked_at >= NOW() - INTERVAL '7 days'"
+        where_conditions.append("c.clicked_at >= NOW() - INTERVAL '7 days'")
     elif time_range == '30d':
-        time_filter = "WHERE fc.clicked_at >= NOW() - INTERVAL '30 days'"
+        where_conditions.append("c.clicked_at >= NOW() - INTERVAL '30 days'")
 
-    # First get the first click per unique visitor, THEN filter by time range
+    where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+
+    # Get first click per unique visitor (by link_id = unique person) within the time period
     query = f'''
         WITH first_clicks AS (
-            SELECT DISTINCT ON (c.ip_address)
-                c.ip_address,
+            SELECT DISTINCT ON (c.link_id)
                 c.clicked_at
             FROM clicks c
             JOIN links l ON c.link_id = l.link_id
-            {campaign_where}
-            ORDER BY c.ip_address, c.clicked_at ASC
+            {where_clause}
+            ORDER BY c.link_id, c.clicked_at ASC
         )
         SELECT
             EXTRACT(DOW FROM fc.clicked_at) as day_of_week,
             EXTRACT(HOUR FROM fc.clicked_at) as hour,
             COUNT(*) as click_count
         FROM first_clicks fc
-        {time_filter}
         GROUP BY day_of_week, hour
         ORDER BY day_of_week, hour
     '''
@@ -497,12 +496,14 @@ def get_timeline():
         step_interval = '1 day'
         format_str = 'YYYY-MM-DD'
 
-    # Build campaign filter for CTE
-    campaign_where = ""
+    # Build WHERE clause for filtering first clicks within the time period
+    where_conditions = [f"c.clicked_at >= NOW() - INTERVAL '{start_interval}'"]
     if campaign_filter:
-        campaign_where = f"WHERE l.campaign = '{campaign_filter}'"
+        where_conditions.append(f"l.campaign = '{campaign_filter}'")
 
-    # First get the first click per unique visitor (all time), THEN filter by time range in the JOIN
+    where_clause = "WHERE " + " AND ".join(where_conditions)
+
+    # Get first click per unique visitor (by link_id) within the time period
     query = f'''
         WITH time_series AS (
             SELECT generate_series(
@@ -512,21 +513,20 @@ def get_timeline():
             ) AS period_time
         ),
         first_clicks AS (
-            SELECT DISTINCT ON (c.ip_address)
-                c.ip_address,
+            SELECT DISTINCT ON (c.link_id)
+                c.link_id,
                 c.clicked_at
             FROM clicks c
             JOIN links l ON c.link_id = l.link_id
-            {campaign_where}
-            ORDER BY c.ip_address, c.clicked_at ASC
+            {where_clause}
+            ORDER BY c.link_id, c.clicked_at ASC
         )
         SELECT
             TO_CHAR(ts.period_time, '{format_str}') as period,
-            COALESCE(COUNT(fc.ip_address), 0) as clicks
+            COALESCE(COUNT(fc.link_id), 0) as clicks
         FROM time_series ts
         LEFT JOIN first_clicks fc
             ON TO_CHAR(fc.clicked_at, '{format_str}') = TO_CHAR(ts.period_time, '{format_str}')
-            AND fc.clicked_at >= NOW() - INTERVAL '{start_interval}'
         GROUP BY period, ts.period_time
         ORDER BY ts.period_time
     '''
