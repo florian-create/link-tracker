@@ -410,7 +410,7 @@ def get_icp_stats():
 
 @app.route('/api/heatmap')
 def get_heatmap():
-    """Get click heatmap data by day of week and hour"""
+    """Get click heatmap data by day of week and hour (unique visitors only)"""
     time_range = request.args.get('range', 'all')  # 24h, 7d, 30d, all
     campaign_filter = request.args.get('campaign', '')
 
@@ -460,10 +460,9 @@ def get_heatmap():
 
 @app.route('/api/analytics/timeline')
 def get_timeline():
-    """Get clicks timeline for chart"""
+    """Get clicks timeline for chart (unique visitors only)"""
     time_range = request.args.get('range', '7d')
     campaign_filter = request.args.get('campaign', '')
-    # Force rebuild
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
