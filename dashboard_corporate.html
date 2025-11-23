@@ -717,7 +717,7 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-header">
-                    <div class="chart-title">Click Timeline (Unique Visitors)</div>
+                    <div class="chart-title">Click Timeline</div>
                 </div>
                 <canvas id="timelineChart"></canvas>
             </div>
@@ -1063,22 +1063,58 @@
                     type: 'line',
                     data: {
                         labels: data.map(d => d.period),
-                        datasets: [{
-                            label: 'Unique Visitors (First Click)',
-                            data: data.map(d => d.clicks),
-                            borderColor: '#fff',
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        }]
+                        datasets: [
+                            {
+                                label: 'Unique Visitors',
+                                data: data.map(d => d.unique_visitors),
+                                borderColor: 'rgba(59, 130, 246, 1)',        // Scientific blue
+                                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                                pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                                pointBorderColor: '#0a0a0a',
+                                pointBorderWidth: 2
+                            },
+                            {
+                                label: 'Total Clicks',
+                                data: data.map(d => d.total_clicks),
+                                borderColor: 'rgba(16, 185, 129, 1)',        // Scientific green
+                                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                                pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                                pointBorderColor: '#0a0a0a',
+                                pointBorderWidth: 2
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
                         plugins: {
                             legend: {
-                                display: false
+                                display: true,
+                                position: 'top',
+                                align: 'end',
+                                labels: {
+                                    color: '#e5e5e5',
+                                    font: {
+                                        size: 11,
+                                        family: "'Inter', sans-serif",
+                                        weight: '500'
+                                    },
+                                    padding: 12,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    boxWidth: 8,
+                                    boxHeight: 8
+                                }
                             }
                         },
                         scales: {

@@ -504,6 +504,7 @@ def get_timeline():
     where_clause = "WHERE " + " AND ".join(where_conditions)
 
     # Get first click per unique visitor (by link_id) within the time period
+    # AND get total clicks count
     query = f'''
         WITH time_series AS (
             SELECT generate_series(
@@ -520,10 +521,23 @@ def get_timeline():
             JOIN links l ON c.link_id = l.link_id
             {where_clause}
             ORDER BY c.link_id, c.clicked_at ASC
+        ),
+        all_clicks AS (
+            SELECT
+                c.clicked_at
+            FROM clicks c
+            JOIN links l ON c.link_id = l.link_id
+            {where_clause}
         )
         SELECT
             TO_CHAR(ts.period_time, '{format_str}') as period,
-            COALESCE(COUNT(fc.link_id), 0) as clicks
+            COALESCE(COUNT(DISTINCT fc.link_id), 0) as unique_visitors,
+            COALESCE(
+                (SELECT COUNT(*)
+                 FROM all_clicks ac
+                 WHERE TO_CHAR(ac.clicked_at, '{format_str}') = TO_CHAR(ts.period_time, '{format_str}')
+                ), 0
+            ) as total_clicks
         FROM time_series ts
         LEFT JOIN first_clicks fc
             ON TO_CHAR(fc.clicked_at, '{format_str}') = TO_CHAR(ts.period_time, '{format_str}')
