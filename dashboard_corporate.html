@@ -1001,19 +1001,23 @@
                 .attr('text-anchor', 'start');
         }
 
-        // Render top clickers data with rose → bordeaux gradient
+        // Render top clickers data with green → blue gradient
         function renderGeoData(geoData) {
             const maxClicks = Math.max(...geoData.map(g => g.clicks), 1);
 
-            // Helper function for gradient color based on intensity
+            // Helper function for gradient color based on intensity (green → blue)
             function getBarColor(intensity) {
                 const colors = [
-                    { threshold: 0, color: '#FAD4C8' },
-                    { threshold: 0.2, color: '#F5A48A' },
-                    { threshold: 0.4, color: '#E35A4A' },
-                    { threshold: 0.6, color: '#CC3A32' },
-                    { threshold: 0.8, color: '#A41519' },
-                    { threshold: 1.0, color: '#63070A' }
+                    { threshold: 0, color: '#D1FAE5' },      // Vert très clair
+                    { threshold: 0.15, color: '#6EE7B7' },   // Vert clair
+                    { threshold: 0.3, color: '#34D399' },    // Vert moyen
+                    { threshold: 0.45, color: '#10B981' },   // Vert
+                    { threshold: 0.55, color: '#14B8A6' },   // Teal
+                    { threshold: 0.65, color: '#06B6D4' },   // Cyan
+                    { threshold: 0.75, color: '#0EA5E9' },   // Sky blue
+                    { threshold: 0.85, color: '#3B82F6' },   // Blue
+                    { threshold: 0.95, color: '#2563EB' },   // Blue foncé
+                    { threshold: 1.0, color: '#1E40AF' }     // Bleu très foncé
                 ];
 
                 for (let i = 0; i < colors.length - 1; i++) {
@@ -1067,20 +1071,6 @@
                             {
                                 label: 'Unique Visitors',
                                 data: data.map(d => d.unique_visitors),
-                                borderColor: 'rgba(59, 130, 246, 1)',        // Scientific blue
-                                backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.4,
-                                pointRadius: 3,
-                                pointHoverRadius: 5,
-                                pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-                                pointBorderColor: '#0a0a0a',
-                                pointBorderWidth: 2
-                            },
-                            {
-                                label: 'Total Clicks',
-                                data: data.map(d => d.total_clicks),
                                 borderColor: 'rgba(16, 185, 129, 1)',        // Scientific green
                                 backgroundColor: 'rgba(16, 185, 129, 0.15)',
                                 borderWidth: 2,
@@ -1089,6 +1079,20 @@
                                 pointRadius: 3,
                                 pointHoverRadius: 5,
                                 pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                                pointBorderColor: '#0a0a0a',
+                                pointBorderWidth: 2
+                            },
+                            {
+                                label: 'Total Clicks',
+                                data: data.map(d => d.total_clicks),
+                                borderColor: 'rgba(59, 130, 246, 1)',        // Scientific blue
+                                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                                pointBackgroundColor: 'rgba(59, 130, 246, 1)',
                                 pointBorderColor: '#0a0a0a',
                                 pointBorderWidth: 2
                             }
@@ -1185,18 +1189,22 @@
             // Find max for scaling
             const maxClicks = Math.max(...data.map(d => parseInt(d.click_count)), 1);
 
-            // Color gradient function: rose pâle -> bordeaux foncé
+            // Color gradient function: green -> blue with smooth transitions
             function getHeatColor(intensity) {
                 if (intensity === 0) return '#1a1a1a'; // Fond sombre pour 0
 
-                // Dégradé rose pâle → bordeaux foncé
+                // Dégradé scientifique vert → bleu avec plus de nuances
                 const colors = [
-                    { threshold: 0, color: '#FAD4C8' },      // ≈ 1 000 - rose très clair
-                    { threshold: 0.2, color: '#F5A48A' },    // ≈ 2 000 - orange clair
-                    { threshold: 0.4, color: '#E35A4A' },    // ≈ 3 000 - rouge orangé
-                    { threshold: 0.6, color: '#CC3A32' },    // ≈ 4 000 - rouge soutenu
-                    { threshold: 0.8, color: '#A41519' },    // ≈ 5 000 - rouge foncé
-                    { threshold: 1.0, color: '#63070A' }     // ≈ 5 500+ - bordeaux très foncé
+                    { threshold: 0, color: '#D1FAE5' },      // Vert très clair
+                    { threshold: 0.15, color: '#6EE7B7' },   // Vert clair
+                    { threshold: 0.3, color: '#34D399' },    // Vert moyen
+                    { threshold: 0.45, color: '#10B981' },   // Vert
+                    { threshold: 0.55, color: '#14B8A6' },   // Teal
+                    { threshold: 0.65, color: '#06B6D4' },   // Cyan
+                    { threshold: 0.75, color: '#0EA5E9' },   // Sky blue
+                    { threshold: 0.85, color: '#3B82F6' },   // Blue
+                    { threshold: 0.95, color: '#2563EB' },   // Blue foncé
+                    { threshold: 1.0, color: '#1E40AF' }     // Bleu très foncé
                 ];
 
                 // Trouver les deux couleurs entre lesquelles interpoler
@@ -1390,32 +1398,31 @@
                 return;
             }
 
-            // Scientific color palette with transparency (data visualization best practices)
-            // Inspired by scientific journals and data visualization standards
+            // Scientific color palette with transparency - Blue/Green gradient
             const colors = [
-                'rgba(59, 130, 246, 0.75)',   // Blue - primary
-                'rgba(16, 185, 129, 0.75)',   // Green - secondary
-                'rgba(249, 115, 22, 0.75)',   // Orange - tertiary
-                'rgba(139, 92, 246, 0.75)',   // Purple - quaternary
-                'rgba(236, 72, 153, 0.75)',   // Pink - quinary
-                'rgba(251, 191, 36, 0.75)',   // Amber - senary
-                'rgba(14, 165, 233, 0.75)',   // Sky - septenary
-                'rgba(168, 85, 247, 0.75)',   // Violet - octonary
-                'rgba(34, 197, 94, 0.75)',    // Emerald - nonary
-                'rgba(251, 146, 60, 0.75)'    // Orange alt - denary
+                'rgba(16, 185, 129, 0.75)',   // Green - primary
+                'rgba(34, 197, 94, 0.75)',    // Emerald
+                'rgba(59, 130, 246, 0.75)',   // Blue - secondary
+                'rgba(14, 165, 233, 0.75)',   // Sky blue
+                'rgba(5, 150, 105, 0.75)',    // Darker green
+                'rgba(37, 99, 235, 0.75)',    // Darker blue
+                'rgba(16, 185, 129, 0.6)',    // Green lighter
+                'rgba(59, 130, 246, 0.6)',    // Blue lighter
+                'rgba(20, 184, 166, 0.75)',   // Teal
+                'rgba(79, 70, 229, 0.75)'     // Indigo
             ];
 
             const borderColors = [
-                'rgba(59, 130, 246, 1)',
                 'rgba(16, 185, 129, 1)',
-                'rgba(249, 115, 22, 1)',
-                'rgba(139, 92, 246, 1)',
-                'rgba(236, 72, 153, 1)',
-                'rgba(251, 191, 36, 1)',
-                'rgba(14, 165, 233, 1)',
-                'rgba(168, 85, 247, 1)',
                 'rgba(34, 197, 94, 1)',
-                'rgba(251, 146, 60, 1)'
+                'rgba(59, 130, 246, 1)',
+                'rgba(14, 165, 233, 1)',
+                'rgba(5, 150, 105, 1)',
+                'rgba(37, 99, 235, 1)',
+                'rgba(16, 185, 129, 1)',
+                'rgba(59, 130, 246, 1)',
+                'rgba(20, 184, 166, 1)',
+                'rgba(79, 70, 229, 1)'
             ];
 
             const labels = icpData.map(d => d.icp);
