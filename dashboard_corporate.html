@@ -1001,25 +1001,23 @@
                 .attr('text-anchor', 'start');
         }
 
-        // Render top clickers data with white → yellow → orange → red gradient
+        // Render top clickers data with pale yellow → dark red-orange gradient (9 levels)
         function renderGeoData(geoData) {
             const maxClicks = Math.max(...geoData.map(g => g.clicks), 1);
 
-            // Helper function for gradient color based on intensity (white → yellow → orange → red)
+            // Helper function for gradient color based on intensity (9-level sequential palette)
             function getBarColor(intensity) {
                 const colors = [
-                    { threshold: 0, color: '#FFFFFF' },      // Blanc pur
-                    { threshold: 0.1, color: '#FEF3C7' },    // Jaune très pâle
-                    { threshold: 0.2, color: '#FDE68A' },    // Jaune clair
-                    { threshold: 0.3, color: '#FCD34D' },    // Jaune
-                    { threshold: 0.4, color: '#FBBF24' },    // Jaune orangé
-                    { threshold: 0.5, color: '#F59E0B' },    // Orange clair
-                    { threshold: 0.6, color: '#FB923C' },    // Orange
-                    { threshold: 0.7, color: '#F97316' },    // Orange vif
-                    { threshold: 0.8, color: '#EF4444' },    // Rouge
-                    { threshold: 0.9, color: '#DC2626' },    // Rouge foncé
-                    { threshold: 0.95, color: '#B91C1C' },   // Rouge très foncé
-                    { threshold: 1.0, color: '#7F1D1D' }     // Rouge bordeaux
+                    { threshold: 0, color: '#FFF0AE' },      // Very pale yellow
+                    { threshold: 0.111, color: '#FEDD9C' },  // Light yellow
+                    { threshold: 0.222, color: '#FDCB8A' },  // Yellow-orange
+                    { threshold: 0.333, color: '#FCB878' },  // Pale orange
+                    { threshold: 0.444, color: '#FAA566' },  // Light orange
+                    { threshold: 0.555, color: '#F89554' },  // Medium orange
+                    { threshold: 0.666, color: '#F57842' },  // Bright orange
+                    { threshold: 0.777, color: '#E55A3A' },  // Red-orange
+                    { threshold: 0.888, color: '#C84C3C' },  // Dark brick red
+                    { threshold: 1.0, color: '#C84C3C' }     // Dark brick red (max)
                 ];
 
                 for (let i = 0; i < colors.length - 1; i++) {
@@ -1191,24 +1189,22 @@
             // Find max for scaling
             const maxClicks = Math.max(...data.map(d => parseInt(d.click_count)), 1);
 
-            // Color gradient function: white -> yellow -> orange -> red -> dark red with smooth transitions
+            // Color gradient function: pale yellow -> dark red-orange (9 levels)
             function getHeatColor(intensity) {
                 if (intensity === 0) return '#1a1a1a'; // Fond sombre pour 0
 
-                // Dégradé blanc → jaune → orange → rouge → rouge foncé avec plus de nuances
+                // Sequential color palette: 9 distinct levels from pale yellow to dark brick red
                 const colors = [
-                    { threshold: 0, color: '#FFFFFF' },      // Blanc pur
-                    { threshold: 0.1, color: '#FEF3C7' },    // Jaune très pâle
-                    { threshold: 0.2, color: '#FDE68A' },    // Jaune clair
-                    { threshold: 0.3, color: '#FCD34D' },    // Jaune
-                    { threshold: 0.4, color: '#FBBF24' },    // Jaune orangé
-                    { threshold: 0.5, color: '#F59E0B' },    // Orange clair
-                    { threshold: 0.6, color: '#FB923C' },    // Orange
-                    { threshold: 0.7, color: '#F97316' },    // Orange vif
-                    { threshold: 0.8, color: '#EF4444' },    // Rouge
-                    { threshold: 0.9, color: '#DC2626' },    // Rouge foncé
-                    { threshold: 0.95, color: '#B91C1C' },   // Rouge très foncé
-                    { threshold: 1.0, color: '#7F1D1D' }     // Rouge bordeaux
+                    { threshold: 0, color: '#FFF0AE' },      // Very pale yellow
+                    { threshold: 0.111, color: '#FEDD9C' },  // Light yellow
+                    { threshold: 0.222, color: '#FDCB8A' },  // Yellow-orange
+                    { threshold: 0.333, color: '#FCB878' },  // Pale orange
+                    { threshold: 0.444, color: '#FAA566' },  // Light orange
+                    { threshold: 0.555, color: '#F89554' },  // Medium orange
+                    { threshold: 0.666, color: '#F57842' },  // Bright orange
+                    { threshold: 0.777, color: '#E55A3A' },  // Red-orange
+                    { threshold: 0.888, color: '#C84C3C' },  // Dark brick red
+                    { threshold: 1.0, color: '#C84C3C' }     // Dark brick red (max)
                 ];
 
                 // Trouver les deux couleurs entre lesquelles interpoler
