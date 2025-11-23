@@ -1001,23 +1001,23 @@
                 .attr('text-anchor', 'start');
         }
 
-        // Render top clickers data with pale yellow → dark red-orange gradient (9 levels)
+        // Render top clickers data with pale yellow → dark red-orange gradient (9 levels) with transparency
         function renderGeoData(geoData) {
             const maxClicks = Math.max(...geoData.map(g => g.clicks), 1);
 
-            // Helper function for gradient color based on intensity (9-level sequential palette)
+            // Helper function for gradient color based on intensity (9-level sequential palette with transparency)
             function getBarColor(intensity) {
                 const colors = [
-                    { threshold: 0, color: '#FFF0AE' },      // Very pale yellow
-                    { threshold: 0.111, color: '#FEDD9C' },  // Light yellow
-                    { threshold: 0.222, color: '#FDCB8A' },  // Yellow-orange
-                    { threshold: 0.333, color: '#FCB878' },  // Pale orange
-                    { threshold: 0.444, color: '#FAA566' },  // Light orange
-                    { threshold: 0.555, color: '#F89554' },  // Medium orange
-                    { threshold: 0.666, color: '#F57842' },  // Bright orange
-                    { threshold: 0.777, color: '#E55A3A' },  // Red-orange
-                    { threshold: 0.888, color: '#C84C3C' },  // Dark brick red
-                    { threshold: 1.0, color: '#C84C3C' }     // Dark brick red (max)
+                    { threshold: 0, color: 'rgba(255, 240, 174, 0.7)' },      // Very pale yellow
+                    { threshold: 0.111, color: 'rgba(254, 221, 156, 0.7)' },  // Light yellow
+                    { threshold: 0.222, color: 'rgba(253, 203, 138, 0.75)' }, // Yellow-orange
+                    { threshold: 0.333, color: 'rgba(252, 184, 120, 0.75)' }, // Pale orange
+                    { threshold: 0.444, color: 'rgba(250, 165, 102, 0.8)' },  // Light orange
+                    { threshold: 0.555, color: 'rgba(248, 149, 84, 0.8)' },   // Medium orange
+                    { threshold: 0.666, color: 'rgba(245, 120, 66, 0.85)' },  // Bright orange
+                    { threshold: 0.777, color: 'rgba(229, 90, 58, 0.85)' },   // Red-orange
+                    { threshold: 0.888, color: 'rgba(200, 76, 60, 0.9)' },    // Dark brick red
+                    { threshold: 1.0, color: 'rgba(200, 76, 60, 0.9)' }       // Dark brick red (max)
                 ];
 
                 for (let i = 0; i < colors.length - 1; i++) {
@@ -1189,40 +1189,28 @@
             // Find max for scaling
             const maxClicks = Math.max(...data.map(d => parseInt(d.click_count)), 1);
 
-            // Color gradient function: pale yellow -> dark red-orange (9 levels)
+            // Color gradient function: pale yellow -> dark red-orange (9 levels) with transparency
             function getHeatColor(intensity) {
                 if (intensity === 0) return '#1a1a1a'; // Fond sombre pour 0
 
-                // Sequential color palette: 9 distinct levels from pale yellow to dark brick red
+                // Sequential color palette: 9 distinct levels from pale yellow to dark brick red (with transparency)
                 const colors = [
-                    { threshold: 0, color: '#FFF0AE' },      // Very pale yellow
-                    { threshold: 0.111, color: '#FEDD9C' },  // Light yellow
-                    { threshold: 0.222, color: '#FDCB8A' },  // Yellow-orange
-                    { threshold: 0.333, color: '#FCB878' },  // Pale orange
-                    { threshold: 0.444, color: '#FAA566' },  // Light orange
-                    { threshold: 0.555, color: '#F89554' },  // Medium orange
-                    { threshold: 0.666, color: '#F57842' },  // Bright orange
-                    { threshold: 0.777, color: '#E55A3A' },  // Red-orange
-                    { threshold: 0.888, color: '#C84C3C' },  // Dark brick red
-                    { threshold: 1.0, color: '#C84C3C' }     // Dark brick red (max)
+                    { threshold: 0, color: 'rgba(255, 240, 174, 0.7)' },      // Very pale yellow
+                    { threshold: 0.111, color: 'rgba(254, 221, 156, 0.7)' },  // Light yellow
+                    { threshold: 0.222, color: 'rgba(253, 203, 138, 0.75)' }, // Yellow-orange
+                    { threshold: 0.333, color: 'rgba(252, 184, 120, 0.75)' }, // Pale orange
+                    { threshold: 0.444, color: 'rgba(250, 165, 102, 0.8)' },  // Light orange
+                    { threshold: 0.555, color: 'rgba(248, 149, 84, 0.8)' },   // Medium orange
+                    { threshold: 0.666, color: 'rgba(245, 120, 66, 0.85)' },  // Bright orange
+                    { threshold: 0.777, color: 'rgba(229, 90, 58, 0.85)' },   // Red-orange
+                    { threshold: 0.888, color: 'rgba(200, 76, 60, 0.9)' },    // Dark brick red
+                    { threshold: 1.0, color: 'rgba(200, 76, 60, 0.9)' }       // Dark brick red (max)
                 ];
 
                 // Trouver les deux couleurs entre lesquelles interpoler
                 for (let i = 0; i < colors.length - 1; i++) {
                     if (intensity >= colors[i].threshold && intensity <= colors[i + 1].threshold) {
-                        const start = colors[i];
-                        const end = colors[i + 1];
-                        const localRatio = (intensity - start.threshold) / (end.threshold - start.threshold);
-
-                        // Interpoler entre les deux couleurs
-                        const startRGB = hexToRgb(start.color);
-                        const endRGB = hexToRgb(end.color);
-
-                        const r = Math.round(startRGB.r + (endRGB.r - startRGB.r) * localRatio);
-                        const g = Math.round(startRGB.g + (endRGB.g - startRGB.g) * localRatio);
-                        const b = Math.round(startRGB.b + (endRGB.b - startRGB.b) * localRatio);
-
-                        return `rgb(${r}, ${g}, ${b})`;
+                        return colors[i].color;
                     }
                 }
 
@@ -1398,31 +1386,31 @@
                 return;
             }
 
-            // Scientific color palette with transparency - Blue/Green gradient
+            // Scientific color palette with transparency - Blue/Green gradient (scientific look)
             const colors = [
-                'rgba(16, 185, 129, 0.75)',   // Green - primary
-                'rgba(34, 197, 94, 0.75)',    // Emerald
-                'rgba(59, 130, 246, 0.75)',   // Blue - secondary
-                'rgba(14, 165, 233, 0.75)',   // Sky blue
-                'rgba(5, 150, 105, 0.75)',    // Darker green
-                'rgba(37, 99, 235, 0.75)',    // Darker blue
-                'rgba(16, 185, 129, 0.6)',    // Green lighter
-                'rgba(59, 130, 246, 0.6)',    // Blue lighter
-                'rgba(20, 184, 166, 0.75)',   // Teal
-                'rgba(79, 70, 229, 0.75)'     // Indigo
+                'rgba(16, 185, 129, 0.6)',    // Green - primary
+                'rgba(34, 197, 94, 0.6)',     // Emerald
+                'rgba(59, 130, 246, 0.6)',    // Blue - secondary
+                'rgba(14, 165, 233, 0.6)',    // Sky blue
+                'rgba(5, 150, 105, 0.65)',    // Darker green
+                'rgba(37, 99, 235, 0.65)',    // Darker blue
+                'rgba(16, 185, 129, 0.55)',   // Green lighter
+                'rgba(59, 130, 246, 0.55)',   // Blue lighter
+                'rgba(20, 184, 166, 0.6)',    // Teal
+                'rgba(79, 70, 229, 0.6)'      // Indigo
             ];
 
             const borderColors = [
-                'rgba(16, 185, 129, 1)',
-                'rgba(34, 197, 94, 1)',
-                'rgba(59, 130, 246, 1)',
-                'rgba(14, 165, 233, 1)',
-                'rgba(5, 150, 105, 1)',
-                'rgba(37, 99, 235, 1)',
-                'rgba(16, 185, 129, 1)',
-                'rgba(59, 130, 246, 1)',
-                'rgba(20, 184, 166, 1)',
-                'rgba(79, 70, 229, 1)'
+                'rgba(16, 185, 129, 0.9)',
+                'rgba(34, 197, 94, 0.9)',
+                'rgba(59, 130, 246, 0.9)',
+                'rgba(14, 165, 233, 0.9)',
+                'rgba(5, 150, 105, 0.9)',
+                'rgba(37, 99, 235, 0.9)',
+                'rgba(16, 185, 129, 0.9)',
+                'rgba(59, 130, 246, 0.9)',
+                'rgba(20, 184, 166, 0.9)',
+                'rgba(79, 70, 229, 0.9)'
             ];
 
             const labels = icpData.map(d => d.icp);
