@@ -1,0 +1,182 @@
+<!-- INFOGRAPHIE LIGHT - Version ultra-légère et épurée -->
+
+<style>
+.light-flow {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 50px 20px;
+  gap: 30px;
+}
+
+.light-step {
+  flex: 1;
+  text-align: center;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Icône minimaliste */
+.light-icon-box {
+  width: 65px;
+  height: 65px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.light-icon {
+  width: 35px;
+  height: 35px;
+  stroke: white;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+/* Numéro discret */
+.light-number {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  color: #0A66C2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Titre */
+.light-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: white;
+  max-width: 180px;
+}
+
+/* Description */
+.light-desc {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 170px;
+}
+
+/* Flèche simple */
+.light-arrow {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+/* Mobile */
+@media (max-width: 991px) {
+  .light-flow {
+    flex-wrap: wrap;
+    gap: 40px 20px;
+  }
+
+  .light-step {
+    flex: 0 0 calc(50% - 10px);
+  }
+
+  .light-arrow:nth-child(3),
+  .light-arrow:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .light-flow {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .light-step {
+    flex: 1;
+  }
+
+  .light-arrow {
+    display: none;
+  }
+}
+</style>
+
+<div class="light-flow">
+
+  <!-- ÉTAPE 1 -->
+  <div class="light-step">
+    <div class="light-icon-box">
+      <svg class="light-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="light-number">1</span>
+    </div>
+    <div class="light-title">On crée votre liste</div>
+    <div class="light-desc">Contacts ciblés selon vos critères</div>
+  </div>
+
+  <div class="light-arrow">→</div>
+
+  <!-- ÉTAPE 2 -->
+  <div class="light-step">
+    <div class="light-icon-box">
+      <svg class="light-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="light-number">2</span>
+    </div>
+    <div class="light-title">On analyse chaque contact</div>
+    <div class="light-desc">Priorité aux meilleurs prospects</div>
+  </div>
+
+  <div class="light-arrow">→</div>
+
+  <!-- ÉTAPE 3 -->
+  <div class="light-step">
+    <div class="light-icon-box">
+      <svg class="light-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 10h8M8 14h4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="light-number">3</span>
+    </div>
+    <div class="light-title">On envoie 500 messages par mois</div>
+    <div class="light-desc">Depuis votre compte LinkedIn</div>
+  </div>
+
+  <div class="light-arrow">→</div>
+
+  <!-- ÉTAPE 4 -->
+  <div class="light-step">
+    <div class="light-icon-box">
+      <svg class="light-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="22 4 12 14.01 9 11.01" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="light-number">4</span>
+    </div>
+    <div class="light-title">Vous obtenez des clients</div>
+    <div class="light-desc">Résultats garantis sous 30 jours</div>
+  </div>
+
+</div>
