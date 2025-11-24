@@ -1,0 +1,72 @@
+<style>
+/* Gradient Bleu LinkedIn - À copier dans un élément Embed Webflow */
+
+/* Appliquer le gradient à la section parente */
+.w-embed:has(> #linkedin-gradient-trigger) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.w-embed:has(> #linkedin-gradient-trigger)::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    #F3F6F9 0%,
+    #E1EBF5 30%,
+    #C8DBF0 60%,
+    #8BBFE0 85%,
+    #5A9BD5 100%
+  );
+  z-index: -1;
+}
+
+/* Alternative : Si vous voulez l'appliquer directement à une section avec classe */
+.linkedin-blue-bg {
+  background: linear-gradient(
+    180deg,
+    #F3F6F9 0%,
+    #E1EBF5 30%,
+    #C8DBF0 60%,
+    #8BBFE0 85%,
+    #5A9BD5 100%
+  ) !important;
+  position: relative;
+}
+
+/* Version plus intense du gradient */
+.linkedin-blue-bg-intense {
+  background: linear-gradient(
+    180deg,
+    #EEF3F8 0%,
+    #D4E4F7 25%,
+    #A8C9E8 50%,
+    #7BADD9 75%,
+    #4A8BC2 90%,
+    #0A66C2 100%
+  ) !important;
+  position: relative;
+}
+
+/* Pour adapter le texte selon la position */
+.linkedin-blue-bg .text-top,
+.linkedin-blue-bg-intense .text-top {
+  color: #1a1a1a;
+}
+
+.linkedin-blue-bg .text-bottom,
+.linkedin-blue-bg-intense .text-bottom {
+  color: #ffffff;
+}
+</style>
+
+<div id="linkedin-gradient-trigger" style="display: none;"></div>

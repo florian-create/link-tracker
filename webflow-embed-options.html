@@ -1,0 +1,231 @@
+<!--
+=================================================================
+GRADIENT BLEU LINKEDIN POUR WEBFLOW - OPTIONS EMBED
+=================================================================
+
+INSTRUCTIONS :
+1. Dans Webflow, glissez un élément "Embed" sur votre page
+2. Copiez UNE des options ci-dessous
+3. Collez dans l'élément Embed
+4. Publiez votre site
+
+=================================================================
+-->
+
+
+<!-- ========================================
+     OPTION 1 : APPLIQUER À LA SECTION PARENTE (RECOMMANDÉ)
+     ======================================== -->
+
+<style>
+/* Gradient bleu LinkedIn appliqué à la section qui contient cet embed */
+body .w-embed:has(#gradient-trigger) {
+  display: none !important;
+}
+
+body .w-embed:has(#gradient-trigger) ~ * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Trouver la section parente et appliquer le gradient */
+.section:has(.w-embed #gradient-trigger),
+[data-w-id]:has(.w-embed #gradient-trigger) {
+  background: linear-gradient(
+    180deg,
+    #F3F6F9 0%,
+    #E1EBF5 30%,
+    #C8DBF0 60%,
+    #8BBFE0 85%,
+    #5A9BD5 100%
+  ) !important;
+  position: relative;
+}
+</style>
+<div id="gradient-trigger"></div>
+
+
+<!-- ========================================
+     OPTION 2 : AVEC CLASSE CSS (PLUS SIMPLE)
+     ======================================== -->
+
+<!--
+ÉTAPES :
+1. Copiez ce code dans un Embed
+2. Ajoutez la classe "hero-gradient" à votre Section dans Webflow
+-->
+
+<style>
+.hero-gradient {
+  background: linear-gradient(
+    180deg,
+    #F3F6F9 0%,
+    #E1EBF5 30%,
+    #C8DBF0 60%,
+    #8BBFE0 85%,
+    #5A9BD5 100%
+  ) !important;
+  position: relative;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .hero-gradient {
+    min-height: auto;
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+}
+</style>
+
+
+<!-- ========================================
+     OPTION 3 : GRADIENT PLUS INTENSE
+     ======================================== -->
+
+<style>
+.hero-gradient-intense {
+  background: linear-gradient(
+    180deg,
+    #EEF3F8 0%,
+    #D4E4F7 25%,
+    #A8C9E8 50%,
+    #7BADD9 75%,
+    #4A8BC2 90%,
+    #0A66C2 100%
+  ) !important;
+  position: relative;
+}
+</style>
+
+
+<!-- ========================================
+     OPTION 4 : GRADIENT AVEC EFFET GLASSMORPHISM
+     ======================================== -->
+
+<style>
+.hero-gradient-glass {
+  background: linear-gradient(
+    180deg,
+    rgba(243, 246, 249, 0.95) 0%,
+    rgba(225, 235, 245, 0.95) 30%,
+    rgba(200, 219, 240, 0.95) 60%,
+    rgba(139, 191, 224, 0.95) 85%,
+    rgba(90, 155, 213, 0.98) 100%
+  ) !important;
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+/* Ajouter cette classe aux cards/conteneurs blancs pour l'effet glassmorphism */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(10, 102, 194, 0.1);
+}
+</style>
+
+
+<!-- ========================================
+     OPTION 5 : GRADIENT RADIAL (MODERNE)
+     ======================================== -->
+
+<style>
+.hero-gradient-radial {
+  background: radial-gradient(
+    ellipse at top center,
+    #EEF3F8 0%,
+    #D4E4F7 30%,
+    #A8C9E8 60%,
+    #5A9BD5 90%,
+    #0A66C2 100%
+  ) !important;
+  position: relative;
+}
+</style>
+
+
+<!-- ========================================
+     OPTION 6 : FULL SCREEN HERO (COMPLET)
+     ======================================== -->
+
+<style>
+/* Version complète pour une hero section plein écran */
+.linkedin-hero {
+  background: linear-gradient(
+    180deg,
+    #F3F6F9 0%,
+    #E1EBF5 30%,
+    #C8DBF0 60%,
+    #8BBFE0 85%,
+    #5A9BD5 100%
+  ) !important;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+/* Textes adaptatifs */
+.linkedin-hero h1,
+.linkedin-hero h2,
+.linkedin-hero h3 {
+  color: #1a1a1a;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.linkedin-hero p {
+  color: #2c3e50;
+}
+
+/* Boutons style LinkedIn */
+.linkedin-hero .button-primary {
+  background: #0A66C2;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.linkedin-hero .button-primary:hover {
+  background: #004182;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(10, 102, 194, 0.3);
+}
+
+/* Mobile responsive */
+@media (max-width: 991px) {
+  .linkedin-hero {
+    min-height: 100vh;
+    padding: 80px 20px;
+  }
+}
+
+@media (max-width: 767px) {
+  .linkedin-hero {
+    min-height: 100vh;
+    padding: 60px 20px;
+  }
+}
+</style>
+
+
+<!-- ========================================
+     CODE LE PLUS SIMPLE (COPIER-COLLER)
+     ======================================== -->
+
+<!--
+ULTRA SIMPLE - Copiez juste ces 3 lignes :
+1. Glissez un Embed dans Webflow
+2. Collez ce code
+3. Ajoutez la classe "linkedin-bg" à votre section
+-->
+
+<style>
+.linkedin-bg { background: linear-gradient(180deg, #F3F6F9 0%, #E1EBF5 30%, #C8DBF0 60%, #8BBFE0 85%, #5A9BD5 100%) !important; }
+</style>
