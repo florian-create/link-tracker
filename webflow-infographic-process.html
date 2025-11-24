@@ -1,0 +1,167 @@
+<!-- INFOGRAPHIE PROCESSUS - À coller dans un Embed Webflow -->
+
+<style>
+/* Container principal de l'infographie */
+.process-infographic {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  gap: 20px;
+}
+
+/* Chaque étape */
+.process-step {
+  flex: 1;
+  text-align: center;
+  color: white;
+  position: relative;
+}
+
+/* Icône de l'étape */
+.process-step-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 36px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.process-step:hover .process-step-icon {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.1);
+}
+
+/* Numéro de l'étape */
+.process-step-number {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 28px;
+  height: 28px;
+  background: white;
+  color: #0A66C2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Titre de l'étape */
+.process-step-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: white;
+}
+
+/* Description de l'étape */
+.process-step-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.4;
+}
+
+/* Flèche entre les étapes */
+.process-arrow {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 32px;
+  flex-shrink: 0;
+  margin: 0 10px;
+}
+
+/* Responsive mobile */
+@media (max-width: 991px) {
+  .process-infographic {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .process-arrow {
+    transform: rotate(90deg);
+    margin: 10px 0;
+  }
+
+  .process-step-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 767px) {
+  .process-step-title {
+    font-size: 16px;
+  }
+
+  .process-step-description {
+    font-size: 13px;
+  }
+}
+</style>
+
+<!-- HTML de l'infographie -->
+<div class="process-infographic">
+
+  <!-- ÉTAPE 1 -->
+  <div class="process-step">
+    <div class="process-step-icon" style="position: relative;">
+      📋
+      <span class="process-step-number">1</span>
+    </div>
+    <div class="process-step-title">Création de la liste</div>
+    <div class="process-step-description">On crée votre liste de contacts ciblés</div>
+  </div>
+
+  <!-- FLÈCHE -->
+  <div class="process-arrow">→</div>
+
+  <!-- ÉTAPE 2 -->
+  <div class="process-step">
+    <div class="process-step-icon" style="position: relative;">
+      ⭐
+      <span class="process-step-number">2</span>
+    </div>
+    <div class="process-step-title">Scoring des prospects</div>
+    <div class="process-step-description">On analyse et score chaque contact</div>
+  </div>
+
+  <!-- FLÈCHE -->
+  <div class="process-arrow">→</div>
+
+  <!-- ÉTAPE 3 -->
+  <div class="process-step">
+    <div class="process-step-icon" style="position: relative;">
+      💬
+      <span class="process-step-number">3</span>
+    </div>
+    <div class="process-step-title">Messages personnalisés</div>
+    <div class="process-step-description">On les contacte avec votre compte</div>
+  </div>
+
+  <!-- FLÈCHE -->
+  <div class="process-arrow">→</div>
+
+  <!-- ÉTAPE 4 -->
+  <div class="process-step">
+    <div class="process-step-icon" style="position: relative;">
+      🎯
+      <span class="process-step-number">4</span>
+    </div>
+    <div class="process-step-title">Nouveaux clients</div>
+    <div class="process-step-description">Vous obtenez de nouveaux clients</div>
+  </div>
+
+</div>

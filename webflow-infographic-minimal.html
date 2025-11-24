@@ -1,0 +1,151 @@
+<!-- INFOGRAPHIE MINIMALISTE - Version ultra simple avec cercles numérotés -->
+
+<style>
+/* Container principal */
+.minimal-process {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 20px;
+  gap: 0;
+}
+
+/* Chaque étape */
+.minimal-step {
+  flex: 1;
+  text-align: center;
+  color: white;
+  position: relative;
+  z-index: 2;
+}
+
+/* Cercle numéroté */
+.minimal-circle {
+  width: 70px;
+  height: 70px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #0A66C2;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 3;
+  transition: all 0.3s ease;
+}
+
+.minimal-step:hover .minimal-circle {
+  transform: scale(1.15);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Ligne de connexion entre les cercles */
+.minimal-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 35px;
+  left: calc(50% + 35px);
+  width: calc(100% - 70px);
+  height: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  z-index: 1;
+}
+
+/* Titre étape */
+.minimal-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Description */
+.minimal-description {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .minimal-process {
+    flex-wrap: wrap;
+    gap: 50px 20px;
+  }
+
+  .minimal-step {
+    flex: 0 0 calc(50% - 10px);
+  }
+
+  .minimal-step:nth-child(odd)::after {
+    display: none;
+  }
+
+  .minimal-step:nth-child(2)::after {
+    top: calc(100% + 25px);
+    left: 50%;
+    transform: translateX(-50%) rotate(90deg);
+    width: 50px;
+  }
+}
+
+@media (max-width: 767px) {
+  .minimal-process {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .minimal-step {
+    flex: 1 1 100%;
+  }
+
+  .minimal-step::after {
+    display: none !important;
+  }
+
+  .minimal-circle {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+  }
+}
+</style>
+
+<div class="minimal-process">
+
+  <!-- Étape 1 -->
+  <div class="minimal-step">
+    <div class="minimal-circle">1</div>
+    <div class="minimal-title">Création de la liste</div>
+    <div class="minimal-description">On crée votre liste<br>de contacts ciblés</div>
+  </div>
+
+  <!-- Étape 2 -->
+  <div class="minimal-step">
+    <div class="minimal-circle">2</div>
+    <div class="minimal-title">Scoring</div>
+    <div class="minimal-description">On analyse et score<br>chaque prospect</div>
+  </div>
+
+  <!-- Étape 3 -->
+  <div class="minimal-step">
+    <div class="minimal-circle">3</div>
+    <div class="minimal-title">Messages</div>
+    <div class="minimal-description">On les contacte avec<br>votre compte LinkedIn</div>
+  </div>
+
+  <!-- Étape 4 -->
+  <div class="minimal-step">
+    <div class="minimal-circle">4</div>
+    <div class="minimal-title">Résultats</div>
+    <div class="minimal-description">Vous obtenez de<br>nouveaux clients</div>
+  </div>
+
+</div>
