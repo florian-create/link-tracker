@@ -1,0 +1,251 @@
+<!-- INFOGRAPHIE POWER - Design impactant avec textes ultra-commerciaux -->
+
+<style>
+.power-flow {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 60px 20px;
+  gap: 15px;
+}
+
+.power-step {
+  flex: 1;
+  text-align: center;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.power-step:hover {
+  transform: translateY(-12px) scale(1.02);
+}
+
+/* Badge numéro en haut */
+.power-number {
+  width: 40px;
+  height: 40px;
+  background: white;
+  color: #0A66C2;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.power-step:hover .power-number {
+  transform: rotate(360deg);
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
+}
+
+/* Icône power */
+.power-icon-container {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.power-step:hover .power-icon-container {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
+  border-color: white;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Effet de brillance */
+.power-icon-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  transform: rotate(45deg);
+  transition: all 0.5s ease;
+}
+
+.power-step:hover .power-icon-container::before {
+  left: 100%;
+}
+
+.power-icon {
+  width: 56px;
+  height: 56px;
+  fill: white;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  z-index: 1;
+}
+
+/* Titre power */
+.power-title {
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1.2;
+  color: white;
+  max-width: 220px;
+  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+  font-size: 16px;
+}
+
+/* Sous-titre bénéfice */
+.power-benefit {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.95);
+  max-width: 210px;
+}
+
+/* Séparateur */
+.power-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 34px;
+  flex-shrink: 0;
+  padding: 0 5px;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .power-flow {
+    flex-wrap: wrap;
+    gap: 55px 25px;
+  }
+
+  .power-step {
+    flex: 0 0 calc(50% - 12.5px);
+  }
+
+  .power-divider:nth-child(3),
+  .power-divider:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .power-flow {
+    flex-direction: column;
+    gap: 55px;
+  }
+
+  .power-step {
+    flex: 1;
+  }
+
+  .power-divider {
+    display: none;
+  }
+
+  .power-icon-container {
+    width: 90px;
+    height: 90px;
+  }
+
+  .power-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .power-title {
+    font-size: 15px;
+  }
+
+  .power-benefit {
+    font-size: 13px;
+  }
+}
+</style>
+
+<div class="power-flow">
+
+  <!-- ÉTAPE 1 -->
+  <div class="power-step">
+    <div class="power-number">1</div>
+    <div class="power-icon-container">
+      <svg class="power-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path d="M24 4C12.954 4 4 12.954 4 24s8.954 20 20 20 20-8.954 20-20S35.046 4 24 4zm0 36c-8.822 0-16-7.178-16-16S15.178 8 24 8s16 7.178 16 16-7.178 16-16 16z"/>
+        <path d="M24 12c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 20c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z"/>
+        <circle cx="24" cy="24" r="4"/>
+        <path d="M24 2v6M24 40v6M46 24h-6M8 24H2M39.6 8.4l-4.24 4.24M12.64 35.36l-4.24 4.24M39.6 39.6l-4.24-4.24M12.64 12.64l-4.24-4.24"/>
+      </svg>
+    </div>
+    <div class="power-title">🎯 Prospects Sur-Mesure</div>
+    <div class="power-benefit">Trouvez VOS décideurs en 48h chrono</div>
+  </div>
+
+  <div class="power-divider">▶</div>
+
+  <!-- ÉTAPE 2 -->
+  <div class="power-step">
+    <div class="power-number">2</div>
+    <div class="power-icon-container">
+      <svg class="power-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path d="M24 4l6.18 12.52L44 18.18l-10 9.75L36.36 44 24 37.26 11.64 44 14 27.93 4 18.18l13.82-1.66L24 4z"/>
+        <circle cx="8" cy="8" r="3"/>
+        <circle cx="40" cy="8" r="3"/>
+        <circle cx="8" cy="40" r="3"/>
+        <circle cx="40" cy="40" r="3"/>
+      </svg>
+    </div>
+    <div class="power-title">⚡ IA Prédictive</div>
+    <div class="power-benefit">Seuls les meilleurs prospects arrivent</div>
+  </div>
+
+  <div class="power-divider">▶</div>
+
+  <!-- ÉTAPE 3 -->
+  <div class="power-step">
+    <div class="power-number">3</div>
+    <div class="power-icon-container">
+      <svg class="power-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path d="M42 18V6H30l-6 6-6-6H6v12l6 6-6 6v12h12l6-6 6 6h12V30l-6-6 6-6z"/>
+        <circle cx="24" cy="24" r="8"/>
+        <path d="M24 8v8M24 32v8M40 24h-8M16 24H8"/>
+      </svg>
+    </div>
+    <div class="power-title">🚀 Pilote Automatique</div>
+    <div class="power-benefit">Messages percutants envoyés 24/7</div>
+  </div>
+
+  <div class="power-divider">▶</div>
+
+  <!-- ÉTAPE 4 -->
+  <div class="power-step">
+    <div class="power-number">4</div>
+    <div class="power-icon-container">
+      <svg class="power-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path d="M24 4C12.954 4 4 12.954 4 24s8.954 20 20 20 20-8.954 20-20S35.046 4 24 4zm0 36c-8.822 0-16-7.178-16-16S15.178 8 24 8s16 7.178 16 16-7.178 16-16 16z"/>
+        <path d="M34 18L21 31l-7-7"/>
+        <path d="M20 24l4 4 8-8" stroke="white" stroke-width="2" fill="none"/>
+      </svg>
+    </div>
+    <div class="power-title">💰 Clients Rentables</div>
+    <div class="power-benefit">Pipeline plein, revenus en hausse</div>
+  </div>
+
+</div>

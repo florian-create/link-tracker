@@ -1,0 +1,231 @@
+<!-- INFOGRAPHIE PREMIUM - Design moderne avec icônes remplies -->
+
+<style>
+.premium-flow {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 20px;
+  gap: 25px;
+}
+
+.premium-step {
+  flex: 1;
+  text-align: center;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.4s ease;
+  position: relative;
+}
+
+.premium-step:hover {
+  transform: translateY(-10px);
+}
+
+/* Container icône premium */
+.premium-icon-box {
+  width: 95px;
+  height: 95px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
+  border: 2.5px solid rgba(255, 255, 255, 0.6);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  position: relative;
+  transition: all 0.4s ease;
+}
+
+.premium-step:hover .premium-icon-box {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.15) 100%);
+  border-color: white;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2), 0 0 0 4px rgba(255, 255, 255, 0.1);
+  transform: rotate(-5deg);
+}
+
+/* Icône avec effet de remplissage */
+.premium-icon {
+  width: 50px;
+  height: 50px;
+  fill: white;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15));
+}
+
+/* Badge numéro premium */
+.premium-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  color: #0A66C2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: 3px solid rgba(10, 102, 194, 0.2);
+}
+
+/* Titre premium */
+.premium-headline {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: white;
+  max-width: 210px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  letter-spacing: -0.3px;
+}
+
+/* Description premium */
+.premium-desc {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 200px;
+}
+
+/* Flèche animée */
+.premium-connector {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 32px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.premium-connector:hover {
+  color: rgba(255, 255, 255, 0.8);
+  transform: scale(1.2);
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .premium-flow {
+    flex-wrap: wrap;
+    gap: 50px 20px;
+  }
+
+  .premium-step {
+    flex: 0 0 calc(50% - 10px);
+  }
+
+  .premium-connector:nth-child(3),
+  .premium-connector:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .premium-flow {
+    flex-direction: column;
+    gap: 50px;
+  }
+
+  .premium-step {
+    flex: 1;
+  }
+
+  .premium-connector {
+    display: none;
+  }
+
+  .premium-icon-box {
+    width: 85px;
+    height: 85px;
+  }
+
+  .premium-icon {
+    width: 45px;
+    height: 45px;
+  }
+
+  .premium-headline {
+    font-size: 17px;
+  }
+
+  .premium-desc {
+    font-size: 13px;
+  }
+}
+</style>
+
+<div class="premium-flow">
+
+  <!-- ÉTAPE 1 -->
+  <div class="premium-step">
+    <div class="premium-icon-box">
+      <!-- Icône: Radar/Target avancé -->
+      <svg class="premium-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+      </svg>
+      <span class="premium-badge">1</span>
+    </div>
+    <div class="premium-headline">Prospection Ciblée Ultra-Précise</div>
+    <div class="premium-desc">Vos clients idéaux identifiés en 48h</div>
+  </div>
+
+  <div class="premium-connector">→</div>
+
+  <!-- ÉTAPE 2 -->
+  <div class="premium-step">
+    <div class="premium-icon-box">
+      <!-- Icône: Étoile avec sparkles -->
+      <svg class="premium-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+        <circle cx="4" cy="4" r="1.5"/>
+        <circle cx="20" cy="4" r="1.5"/>
+        <circle cx="4" cy="20" r="1.5"/>
+        <circle cx="20" cy="20" r="1.5"/>
+      </svg>
+      <span class="premium-badge">2</span>
+    </div>
+    <div class="premium-headline">Scoring IA Avancé</div>
+    <div class="premium-desc">Priorité aux prospects à forte valeur</div>
+  </div>
+
+  <div class="premium-connector">→</div>
+
+  <!-- ÉTAPE 3 -->
+  <div class="premium-step">
+    <div class="premium-icon-box">
+      <!-- Icône: Fusée/Rocket -->
+      <svg class="premium-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13.13 22.19l-.86-3.45c-.38-1.49.28-3.05 1.63-3.82L16 13.58V9c0-5.05 2.55-8.09 2.6-8.15L22 3.35c-.89 1.37-1.5 3.23-1.5 5.65v5.3l2.1 1.28c1.34.81 2.01 2.38 1.63 3.82l-.86 3.45c-.16.64-.86 1.02-1.49.79l-3-1.1c-.49-.18-.74-.73-.56-1.22.18-.49.73-.74 1.22-.56l2.11.78.51-2.04c.19-.76-.15-1.56-.83-1.97l-2.43-1.48c-.41-.25-.65-.7-.65-1.18V9c0-1.85.35-3.47.93-4.72-.68.93-1.43 2.37-1.43 4.72v4.58c0 .48-.24.93-.65 1.18l-2.43 1.48c-.68.41-1.02 1.21-.83 1.97l.51 2.04 2.11-.78c.49-.18 1.04.07 1.22.56.18.49-.07 1.04-.56 1.22l-3 1.1c-.19.07-.39.1-.58.1-.45 0-.87-.25-1.08-.61zm-2.48-4.83c-.41 0-.75-.34-.75-.75V10c0-3.17-.96-5.35-2.85-6.48-.43-.26-.56-.81-.31-1.24.26-.43.81-.56 1.24-.31C10.29 3.5 11.4 6.25 11.4 10v6.61c0 .41-.34.75-.75.75zM7 22c-.41 0-.75-.34-.75-.75v-3.5c0-.41.34-.75.75-.75s.75.34.75.75v3.5c0 .41-.34.75-.75.75z"/>
+      </svg>
+      <span class="premium-badge">3</span>
+    </div>
+    <div class="premium-headline">Automation Intelligente</div>
+    <div class="premium-desc">Séquences personnalisées 24/7</div>
+  </div>
+
+  <div class="premium-connector">→</div>
+
+  <!-- ÉTAPE 4 -->
+  <div class="premium-step">
+    <div class="premium-icon-box">
+      <!-- Icône: Trophée/Success -->
+      <svg class="premium-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span class="premium-badge">4</span>
+    </div>
+    <div class="premium-headline">Pipeline Rempli de Clients</div>
+    <div class="premium-desc">ROI mesurable dès 30 jours</div>
+  </div>
+
+</div>
