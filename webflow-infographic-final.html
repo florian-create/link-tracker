@@ -1,0 +1,220 @@
+<!-- INFOGRAPHIE FINALE - Épurée et simple -->
+
+<style>
+.clean-flow {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 20px;
+  gap: 20px;
+}
+
+.clean-step {
+  flex: 1;
+  text-align: center;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  transition: transform 0.3s ease;
+}
+
+.clean-step:hover {
+  transform: translateY(-8px);
+}
+
+/* Icône épurée */
+.clean-icon-box {
+  width: 85px;
+  height: 85px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.clean-step:hover .clean-icon-box {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.clean-icon {
+  width: 45px;
+  height: 45px;
+  stroke: white;
+  stroke-width: 2;
+  fill: none;
+}
+
+/* Numéro simple */
+.clean-number {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 30px;
+  height: 30px;
+  background: white;
+  color: #0A66C2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Titre simple */
+.clean-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: white;
+  max-width: 200px;
+}
+
+/* Description simple */
+.clean-desc {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 190px;
+}
+
+/* Flèche */
+.clean-arrow {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 28px;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+/* Mobile */
+@media (max-width: 991px) {
+  .clean-flow {
+    flex-wrap: wrap;
+    gap: 45px 20px;
+  }
+
+  .clean-step {
+    flex: 0 0 calc(50% - 10px);
+  }
+
+  .clean-arrow:nth-child(3),
+  .clean-arrow:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .clean-flow {
+    flex-direction: column;
+    gap: 45px;
+    padding: 50px 20px;
+  }
+
+  .clean-step {
+    flex: 1;
+  }
+
+  .clean-arrow {
+    display: none;
+  }
+
+  .clean-icon-box {
+    width: 75px;
+    height: 75px;
+  }
+
+  .clean-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .clean-title {
+    font-size: 16px;
+  }
+
+  .clean-desc {
+    font-size: 13px;
+  }
+}
+</style>
+
+<div class="clean-flow">
+
+  <!-- ÉTAPE 1 -->
+  <div class="clean-step">
+    <div class="clean-icon-box">
+      <!-- Icône: Liste de contacts -->
+      <svg class="clean-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="clean-number">1</span>
+    </div>
+    <div class="clean-title">On crée votre liste</div>
+    <div class="clean-desc">Contacts ciblés selon vos critères</div>
+  </div>
+
+  <div class="clean-arrow">→</div>
+
+  <!-- ÉTAPE 2 -->
+  <div class="clean-step">
+    <div class="clean-icon-box">
+      <!-- Icône: Étoiles/Scoring -->
+      <svg class="clean-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="clean-number">2</span>
+    </div>
+    <div class="clean-title">On analyse chaque contact</div>
+    <div class="clean-desc">Priorité aux meilleurs prospects</div>
+  </div>
+
+  <div class="clean-arrow">→</div>
+
+  <!-- ÉTAPE 3 -->
+  <div class="clean-step">
+    <div class="clean-icon-box">
+      <!-- Icône: Messages LinkedIn -->
+      <svg class="clean-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 10h8M8 14h4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="clean-number">3</span>
+    </div>
+    <div class="clean-title">On envoie 500 messages par mois</div>
+    <div class="clean-desc">Depuis votre compte LinkedIn</div>
+  </div>
+
+  <div class="clean-arrow">→</div>
+
+  <!-- ÉTAPE 4 -->
+  <div class="clean-step">
+    <div class="clean-icon-box">
+      <!-- Icône: Check/Succès -->
+      <svg class="clean-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="22 4 12 14.01 9 11.01" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="clean-number">4</span>
+    </div>
+    <div class="clean-title">Vous obtenez des clients</div>
+    <div class="clean-desc">Résultats garantis sous 30 jours</div>
+  </div>
+
+</div>
