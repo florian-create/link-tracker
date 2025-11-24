@@ -1,0 +1,176 @@
+<!-- INFOGRAPHIE ONE-LINE - Texte en une seule ligne par étape -->
+
+<style>
+.oneline-flow {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 50px 20px;
+  gap: 30px;
+}
+
+.oneline-step {
+  flex: 1;
+  text-align: center;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Icône minimaliste */
+.oneline-icon-box {
+  width: 65px;
+  height: 65px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.oneline-icon {
+  width: 35px;
+  height: 35px;
+  stroke: white;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+/* Numéro discret */
+.oneline-number {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  color: #0A66C2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Texte unique en une ligne */
+.oneline-text {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: white;
+  max-width: 200px;
+}
+
+/* Flèche simple */
+.oneline-arrow {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+/* Mobile */
+@media (max-width: 991px) {
+  .oneline-flow {
+    flex-wrap: wrap;
+    gap: 40px 20px;
+  }
+
+  .oneline-step {
+    flex: 0 0 calc(50% - 10px);
+  }
+
+  .oneline-arrow:nth-child(3),
+  .oneline-arrow:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .oneline-flow {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .oneline-step {
+    flex: 1;
+  }
+
+  .oneline-arrow {
+    display: none;
+  }
+
+  .oneline-text {
+    font-size: 14px;
+  }
+}
+</style>
+
+<div class="oneline-flow">
+
+  <!-- ÉTAPE 1 -->
+  <div class="oneline-step">
+    <div class="oneline-icon-box">
+      <svg class="oneline-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="7" r="4"/>
+        <line x1="19" y1="8" x2="19" y2="14" stroke-linecap="round"/>
+        <line x1="22" y1="11" x2="16" y2="11" stroke-linecap="round"/>
+      </svg>
+      <span class="oneline-number">1</span>
+    </div>
+    <div class="oneline-text">On crée votre liste enrichie (email + LinkedIn)</div>
+  </div>
+
+  <div class="oneline-arrow">→</div>
+
+  <!-- ÉTAPE 2 -->
+  <div class="oneline-step">
+    <div class="oneline-icon-box">
+      <svg class="oneline-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <line x1="18" y1="20" x2="18" y2="10" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="12" y1="20" x2="12" y2="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="6" y1="20" x2="6" y2="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="oneline-number">2</span>
+    </div>
+    <div class="oneline-text">On analyse et score les meilleurs prospects</div>
+  </div>
+
+  <div class="oneline-arrow">→</div>
+
+  <!-- ÉTAPE 3 -->
+  <div class="oneline-step">
+    <div class="oneline-icon-box">
+      <svg class="oneline-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 10h8M8 14h4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="oneline-number">3</span>
+    </div>
+    <div class="oneline-text">On envoie 500 messages/mois depuis votre compte LinkedIn</div>
+  </div>
+
+  <div class="oneline-arrow">→</div>
+
+  <!-- ÉTAPE 4 -->
+  <div class="oneline-step">
+    <div class="oneline-icon-box">
+      <svg class="oneline-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="22 4 12 14.01 9 11.01" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="oneline-number">4</span>
+    </div>
+    <div class="oneline-text">Vous obtenez des nouveaux clients qualifiés</div>
+  </div>
+
+</div>
