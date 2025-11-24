@@ -1,0 +1,113 @@
+<!-- BLUR OVERLAY SIMPLE - Version minimaliste et élégante -->
+
+<style>
+/* Container simple */
+.simple-blur {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 40%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 30px;
+}
+
+/* Badge simple et épuré */
+.simple-badge {
+  background: #0A66C2;
+  color: white;
+  padding: 14px 28px 14px 24px;
+  border-radius: 40px;
+  box-shadow: 0 8px 24px rgba(10, 102, 194, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 600;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.simple-badge:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(10, 102, 194, 0.35);
+  background: #004182;
+}
+
+/* Nombre simple */
+.simple-number {
+  font-size: 20px;
+  font-weight: 800;
+  color: #FFD700;
+}
+
+/* Flèche simple */
+.simple-arrow {
+  width: 20px;
+  height: 20px;
+  animation: simpleSlide 1.5s ease-in-out infinite;
+}
+
+.simple-arrow svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes simpleSlide {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .simple-blur {
+    height: 140px;
+    padding-bottom: 20px;
+  }
+
+  .simple-badge {
+    padding: 12px 24px 12px 20px;
+    font-size: 15px;
+  }
+
+  .simple-number {
+    font-size: 18px;
+  }
+
+  .simple-arrow {
+    width: 18px;
+    height: 18px;
+  }
+}
+</style>
+
+<!-- Overlay simple -->
+<div class="simple-blur">
+  <div class="simple-badge">
+    <span>+</span>
+    <span class="simple-number">1 746</span>
+    <span>leads</span>
+    <div class="simple-arrow">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 9l-7 7-7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+  </div>
+</div>

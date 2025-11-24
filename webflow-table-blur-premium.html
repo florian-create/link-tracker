@@ -1,0 +1,254 @@
+<!-- BLUR OVERLAY PREMIUM - Version avec effets avancés -->
+
+<style>
+/* Container du blur overlay premium */
+.premium-blur-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 220px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 25%,
+    rgba(255, 255, 255, 0.7) 60%,
+    rgba(255, 255, 255, 0.95) 100%
+  );
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 35px;
+  gap: 15px;
+}
+
+/* Badge premium avec glassmorphism */
+.premium-leads-badge {
+  background: linear-gradient(135deg, rgba(10, 102, 194, 0.95) 0%, rgba(0, 65, 130, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 18px 36px;
+  border-radius: 60px;
+  box-shadow:
+    0 15px 35px rgba(10, 102, 194, 0.3),
+    0 5px 15px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 19px;
+  font-weight: 700;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-leads-badge:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow:
+    0 20px 45px rgba(10, 102, 194, 0.4),
+    0 8px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Particules d'animation */
+.premium-leads-badge::after {
+  content: '✨';
+  position: absolute;
+  top: -20px;
+  right: 20px;
+  font-size: 24px;
+  opacity: 0;
+  animation: sparkle 3s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(10px) rotate(180deg);
+  }
+}
+
+/* Icône + */
+.leads-plus-icon {
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 900;
+  color: #FFD700;
+  flex-shrink: 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+  }
+}
+
+/* Nombre highlight */
+.premium-leads-number {
+  font-size: 24px;
+  font-weight: 900;
+  background: linear-gradient(45deg, #FFD700, #FFA500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Texte description */
+.premium-leads-text {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Flèche stylée avec double chevron */
+.premium-arrow-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: bounceDouble 2s ease-in-out infinite;
+}
+
+.premium-arrow-container svg {
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3));
+}
+
+@keyframes bounceDouble {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-12px);
+  }
+  60% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Ligne de pointillés animée */
+.dotted-line {
+  width: 2px;
+  height: 30px;
+  background-image: linear-gradient(to bottom, rgba(10, 102, 194, 0.6) 50%, transparent 50%);
+  background-size: 2px 8px;
+  background-repeat: repeat-y;
+  animation: dashMove 1s linear infinite;
+}
+
+@keyframes dashMove {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 8px;
+  }
+}
+
+/* Message subtil en dessous */
+.premium-subtitle {
+  font-size: 13px;
+  color: rgba(10, 102, 194, 0.7);
+  font-weight: 600;
+  pointer-events: auto;
+  animation: fadeInOut 3s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .premium-blur-overlay {
+    height: 180px;
+    padding-bottom: 25px;
+  }
+
+  .premium-leads-badge {
+    padding: 14px 28px;
+    font-size: 17px;
+  }
+
+  .premium-leads-number {
+    font-size: 22px;
+  }
+
+  .leads-plus-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+  }
+
+  .premium-arrow-container svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .dotted-line {
+    height: 20px;
+  }
+
+  .premium-subtitle {
+    font-size: 12px;
+  }
+}
+</style>
+
+<!-- Overlay premium avec blur -->
+<div class="premium-blur-overlay">
+
+  <!-- Badge principal -->
+  <div class="premium-leads-badge">
+    <div class="leads-plus-icon">+</div>
+    <span class="premium-leads-text">Encore</span>
+    <span class="premium-leads-number">1 746</span>
+    <span class="premium-leads-text">leads disponibles</span>
+  </div>
+
+  <!-- Ligne pointillée animée -->
+  <div class="dotted-line"></div>
+
+  <!-- Flèches doubles animées -->
+  <div class="premium-arrow-container">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M7 13l5 5 5-5M7 6l5 5 5-5" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+  </div>
+
+  <!-- Sous-titre optionnel -->
+  <div class="premium-subtitle">Faites défiler pour voir plus</div>
+
+</div>

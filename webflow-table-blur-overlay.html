@@ -1,0 +1,150 @@
+<!-- BLUR OVERLAY - Effet de flou en bas du tableau avec compteur de leads -->
+
+<style>
+/* Container du blur overlay */
+.table-blur-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(248, 249, 250, 0.4) 30%,
+    rgba(248, 249, 250, 0.9) 70%,
+    rgba(248, 249, 250, 1) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 30px;
+}
+
+/* Bulle de compteur */
+.leads-counter-bubble {
+  background: linear-gradient(135deg, #0A66C2 0%, #004182 100%);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 50px;
+  box-shadow: 0 10px 30px rgba(10, 102, 194, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: float 3s ease-in-out infinite;
+}
+
+.leads-counter-bubble:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(10, 102, 194, 0.4);
+}
+
+/* Nombre en surbrillance */
+.leads-number {
+  font-size: 22px;
+  font-weight: 900;
+  color: #FFD700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Flèche animée vers le bas */
+.arrow-down {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.arrow-down svg {
+  width: 20px;
+  height: 20px;
+  fill: white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Animation flottante */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Animation de rebond pour la flèche */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+  60% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Effet de brillance qui passe */
+.leads-counter-bubble::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.7s ease;
+}
+
+.leads-counter-bubble:hover::before {
+  left: 100%;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .table-blur-overlay {
+    height: 150px;
+    padding-bottom: 20px;
+  }
+
+  .leads-counter-bubble {
+    padding: 12px 24px;
+    font-size: 16px;
+  }
+
+  .leads-number {
+    font-size: 20px;
+  }
+
+  .arrow-down svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+</style>
+
+<!-- Overlay avec blur -->
+<div class="table-blur-overlay">
+  <div class="leads-counter-bubble">
+    <span>Encore</span>
+    <span class="leads-number">1 746</span>
+    <span>leads</span>
+    <div class="arrow-down">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+  </div>
+</div>
