@@ -1,0 +1,75 @@
+/*
+ * LinkedIn-style Blue Gradient for Webflow
+ * Similar to the red gradient in the Gojiberry design
+ *
+ * Usage in Webflow:
+ * 1. Copy this code
+ * 2. Go to Page Settings > Custom Code
+ * 3. Paste in the "Head Code" or "Before </body> tag" section wrapped in <style> tags
+ * Or apply directly to a div with custom class
+ */
+
+/* Main gradient background */
+.linkedin-gradient-bg {
+  background: linear-gradient(
+    180deg,
+    #EEF3F8 0%,           /* Very light blue (LinkedIn's lightest) */
+    #D4E4F7 25%,          /* Light blue */
+    #A8C9E8 50%,          /* Medium light blue */
+    #7BADD9 75%,          /* Medium blue */
+    #4A8BC2 90%,          /* LinkedIn blue */
+    #0A66C2 100%          /* Deep LinkedIn blue */
+  );
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Alternative: Softer gradient (more subtle) */
+.linkedin-gradient-soft {
+  background: linear-gradient(
+    180deg,
+    #F3F6F9 0%,           /* Almost white with blue tint */
+    #E8F0F8 20%,          /* Very light blue */
+    #D0E3F5 40%,          /* Light blue */
+    #B3D4ED 60%,          /* Soft blue */
+    #8BBFE0 80%,          /* Medium blue */
+    #5A9BD5 100%          /* LinkedIn-ish blue */
+  );
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+/* Alternative: Radial gradient (more modern look) */
+.linkedin-gradient-radial {
+  background: radial-gradient(
+    ellipse at top center,
+    #E8F0F8 0%,
+    #D0E3F5 30%,
+    #A8C9E8 60%,
+    #0A66C2 100%
+  );
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+/* With subtle texture overlay (optional) */
+.linkedin-gradient-textured {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(238, 243, 248, 0.95) 0%,
+      rgba(212, 228, 247, 0.95) 25%,
+      rgba(168, 201, 232, 0.95) 50%,
+      rgba(123, 173, 217, 0.95) 75%,
+      rgba(74, 139, 194, 0.95) 90%,
+      rgba(10, 102, 194, 0.98) 100%
+    ),
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.03"/></svg>');
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
