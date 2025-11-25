@@ -1,0 +1,908 @@
+<!-- ========== WHATSAPP WIDGET - WEBFLOW AVEC CHAMPS CMS ========== -->
+<!-- Copiez tout ce code dans un élément EMBED de Webflow -->
+
+<style>
+    /* Bouton flottant WhatsApp */
+    #wa-widget-btn {
+        position: fixed !important;
+        bottom: 30px !important;
+        right: 30px !important;
+        width: 60px !important;
+        height: 60px !important;
+        background: transparent !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        transition: all 0.3s ease !important;
+        z-index: 99999 !important;
+    }
+
+    #wa-widget-btn:hover {
+        transform: scale(1.1) !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    #wa-widget-btn img {
+        width: 60px !important;
+        height: 60px !important;
+    }
+
+    /* Badge notification */
+    #wa-widget-badge {
+        position: absolute !important;
+        top: -5px !important;
+        right: -5px !important;
+        background: #FF0000 !important;
+        color: white !important;
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50% !important;
+        display: none !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
+    }
+
+    /* Fenêtre de chat WhatsApp */
+    #wa-widget-window {
+        position: fixed !important;
+        bottom: 110px !important;
+        right: 30px !important;
+        width: 380px !important;
+        height: 550px !important;
+        background: #fff !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+        display: none !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        z-index: 99998 !important;
+    }
+
+    #wa-widget-window.wa-open {
+        display: flex !important;
+        animation: waSlideUp 0.3s ease !important;
+    }
+
+    @keyframes waSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Header */
+    .wa-header {
+        background: #075E54 !important;
+        color: white !important;
+        padding: 16px 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+
+    .wa-avatar {
+        width: 45px !important;
+        height: 45px !important;
+        border-radius: 50% !important;
+        background: #25D366 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+    }
+
+    .wa-avatar img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    .wa-info {
+        flex: 1 !important;
+    }
+
+    .wa-name {
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        margin-bottom: 2px !important;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    }
+
+    .wa-status {
+        font-size: 13px !important;
+        opacity: 0.8 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    }
+
+    .wa-status.wa-typing {
+        color: #25D366 !important;
+    }
+
+    /* Pastille verte "En ligne" */
+    .wa-online-dot {
+        width: 8px !important;
+        height: 8px !important;
+        background: #25D366 !important;
+        border-radius: 50% !important;
+        display: inline-block !important;
+        animation: waPulseOnline 2s ease-in-out infinite !important;
+    }
+
+    @keyframes waPulseOnline {
+        0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.7;
+            transform: scale(1.1);
+        }
+    }
+
+    .wa-close-btn {
+        background: none !important;
+        border: none !important;
+        color: white !important;
+        font-size: 24px !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        width: 30px !important;
+        height: 30px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        opacity: 0.8 !important;
+        transition: opacity 0.2s !important;
+    }
+
+    .wa-close-btn:hover {
+        opacity: 1 !important;
+    }
+
+    /* Messages area */
+    .wa-messages {
+        flex: 1 !important;
+        padding: 20px !important;
+        overflow-y: auto !important;
+        background: #E5DDD5 !important;
+    }
+
+    .wa-message {
+        margin-bottom: 12px !important;
+        display: flex !important;
+        animation: waMessageSlide 0.3s ease !important;
+    }
+
+    @keyframes waMessageSlide {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .wa-message-bubble {
+        max-width: 75% !important;
+        padding: 5px 9px !important;
+        border-radius: 8px !important;
+        font-size: 14.2px !important;
+        line-height: 1.25 !important;
+        word-wrap: break-word !important;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    }
+
+    .wa-message.wa-received .wa-message-bubble {
+        background: white !important;
+        border-radius: 8px 8px 8px 0 !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .wa-message.wa-sent {
+        justify-content: flex-end !important;
+    }
+
+    .wa-message.wa-sent .wa-message-bubble {
+        background: #DCF8C6 !important;
+        border-radius: 8px 8px 0 8px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .wa-message-time {
+        font-size: 11px !important;
+        color: #667781 !important;
+        margin-top: 2px !important;
+        text-align: right !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 4px !important;
+    }
+
+    /* Typing indicator */
+    .wa-typing-indicator {
+        display: none !important;
+        padding: 12px !important;
+        background: white !important;
+        border-radius: 8px 8px 8px 0 !important;
+        width: 60px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .wa-typing-indicator.wa-active {
+        display: block !important;
+        animation: waMessageSlide 0.3s ease !important;
+    }
+
+    .wa-typing-dots {
+        display: flex !important;
+        gap: 4px !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .wa-typing-dots span {
+        width: 8px !important;
+        height: 8px !important;
+        border-radius: 50% !important;
+        background: #9E9E9E !important;
+        animation: waTypingBounce 1.4s infinite !important;
+    }
+
+    .wa-typing-dots span:nth-child(2) {
+        animation-delay: 0.2s !important;
+    }
+
+    .wa-typing-dots span:nth-child(3) {
+        animation-delay: 0.4s !important;
+    }
+
+    @keyframes waTypingBounce {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-8px); }
+    }
+
+    /* Input area */
+    .wa-input-area {
+        padding: 12px !important;
+        background: #F0F0F0 !important;
+        display: flex !important;
+        gap: 8px !important;
+        align-items: center !important;
+    }
+
+    .wa-input {
+        flex: 1 !important;
+        padding: 10px 16px !important;
+        border: none !important;
+        border-radius: 24px !important;
+        font-size: 15px !important;
+        background: white !important;
+        outline: none !important;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    }
+
+    .wa-send-btn {
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 50% !important;
+        background: #25D366 !important;
+        border: none !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.2s !important;
+    }
+
+    .wa-send-btn:hover {
+        background: #20BA5A !important;
+        transform: scale(1.05) !important;
+    }
+
+    .wa-send-btn svg {
+        width: 22px !important;
+        height: 22px !important;
+        fill: white !important;
+    }
+
+    /* Modal d'instruction */
+    .wa-modal {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.7) !important;
+        display: none !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 999999 !important;
+    }
+
+    .wa-modal.wa-show {
+        display: flex !important;
+        animation: waFadeIn 0.3s ease !important;
+    }
+
+    @keyframes waFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .wa-modal-content {
+        background: white !important;
+        border-radius: 16px !important;
+        padding: 30px !important;
+        max-width: 450px !important;
+        width: 90% !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+        text-align: center !important;
+        animation: waScaleIn 0.3s ease !important;
+    }
+
+    @keyframes waScaleIn {
+        from {
+            transform: scale(0.9);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .wa-modal-content h3 {
+        color: #075E54 !important;
+        font-size: 22px !important;
+        margin-bottom: 15px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+    }
+
+    .wa-modal-content p {
+        color: #555 !important;
+        font-size: 16px !important;
+        line-height: 1.5 !important;
+        margin-bottom: 25px !important;
+    }
+
+    .wa-instruction-steps {
+        text-align: left !important;
+        background: #f5f5f5 !important;
+        padding: 20px !important;
+        border-radius: 12px !important;
+        margin-bottom: 25px !important;
+    }
+
+    .wa-instruction-step {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .wa-instruction-step:last-child {
+        margin-bottom: 0 !important;
+    }
+
+    .wa-step-number {
+        background: #25D366 !important;
+        color: white !important;
+        width: 26px !important;
+        height: 26px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: bold !important;
+        font-size: 14px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .wa-step-text {
+        color: #333 !important;
+        font-size: 15px !important;
+        line-height: 1.4 !important;
+        padding-top: 2px !important;
+    }
+
+    .wa-modal-buttons {
+        display: flex !important;
+        gap: 12px !important;
+        justify-content: center !important;
+    }
+
+    .wa-modal-btn {
+        padding: 12px 30px !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+    }
+
+    .wa-modal-btn-primary {
+        background: #25D366 !important;
+        color: white !important;
+    }
+
+    .wa-modal-btn-primary:hover {
+        background: #20BA5A !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3) !important;
+    }
+
+    .wa-modal-btn-secondary {
+        background: #f0f0f0 !important;
+        color: #555 !important;
+    }
+
+    .wa-modal-btn-secondary:hover {
+        background: #e0e0e0 !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+        #wa-widget-window {
+            width: calc(100vw - 20px) !important;
+            right: 10px !important;
+            bottom: 100px !important;
+            height: 500px !important;
+        }
+
+        #wa-widget-btn {
+            bottom: 20px !important;
+            right: 20px !important;
+        }
+
+        .wa-modal-content {
+            padding: 25px 20px !important;
+        }
+
+        .wa-modal-content h3 {
+            font-size: 20px !important;
+        }
+
+        .wa-modal-buttons {
+            flex-direction: column !important;
+        }
+
+        .wa-modal-btn {
+            width: 100% !important;
+        }
+    }
+</style>
+
+<!-- Modal d'instruction -->
+<div class="wa-modal" id="waModal">
+    <div class="wa-modal-content">
+        <h3>
+            <svg width="30" height="30" viewBox="0 0 32 32" style="fill: #25D366;">
+                <path d="M16 0c-8.837 0-16 7.163-16 16 0 2.825 0.737 5.607 2.137 8.048l-2.137 7.952 7.933-2.127c2.42 1.396 5.182 2.127 8.067 2.127 8.837 0 16-7.163 16-16s-7.163-16-16-16zM16 29.467c-2.482 0-4.908-0.646-7.07-1.87l-0.507-0.292-5.305 1.43 1.43-5.305-0.292-0.507c-1.224-2.162-1.87-4.588-1.87-7.070 0-7.412 6.037-13.449 13.449-13.449s13.449 6.037 13.449 13.449-6.037 13.449-13.449 13.449z"/>
+            </svg>
+            WhatsApp va s'ouvrir
+        </h3>
+        <p>Votre message est prêt à être envoyé</p>
+
+        <div class="wa-instruction-steps">
+            <div class="wa-instruction-step">
+                <div class="wa-step-number">1</div>
+                <div class="wa-step-text">WhatsApp Web va s'ouvrir dans un nouvel onglet</div>
+            </div>
+            <div class="wa-instruction-step">
+                <div class="wa-step-number">2</div>
+                <div class="wa-step-text">Votre message sera déjà pré-rempli</div>
+            </div>
+            <div class="wa-instruction-step">
+                <div class="wa-step-number">3</div>
+                <div class="wa-step-text">Cliquez sur le bouton d'envoi pour nous contacter</div>
+            </div>
+        </div>
+
+        <div class="wa-modal-buttons">
+            <button class="wa-modal-btn wa-modal-btn-primary" id="waOpenBtn">
+                Ouvrir WhatsApp
+            </button>
+            <button class="wa-modal-btn wa-modal-btn-secondary" id="waCancelBtn">
+                Annuler
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bouton flottant WhatsApp -->
+<div id="wa-widget-btn">
+    <span id="wa-widget-badge">1</span>
+    <img src="https://res.cloudinary.com/dqfnvegv2/image/upload/v1764077771/pngegg_aq69bf.png" alt="WhatsApp">
+</div>
+
+<!-- Fenêtre de chat -->
+<div id="wa-widget-window">
+    <div class="wa-header">
+        <div class="wa-avatar">
+            <img src="https://res.cloudinary.com/dqfnvegv2/image/upload/v1764076224/1758728502507_v1jikv.png" alt="Florian Cailles">
+        </div>
+        <div class="wa-info">
+            <div class="wa-name">Florian Cailles</div>
+            <div class="wa-status" id="waStatus">
+                <span class="wa-online-dot"></span>
+                En ligne
+            </div>
+        </div>
+        <button class="wa-close-btn" id="waCloseBtn">×</button>
+    </div>
+
+    <div class="wa-messages" id="waMessages">
+        <div class="wa-typing-indicator" id="waTyping">
+            <div class="wa-typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="wa-input-area">
+        <input
+            type="text"
+            class="wa-input"
+            id="waInput"
+            placeholder="Écrivez un message..."
+            autocomplete="off"
+        >
+        <button class="wa-send-btn" id="waSendBtn">
+            <svg viewBox="0 0 24 24">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- ============================================================================
+     🎯 CONFIGURATION - SECTION À PERSONNALISER
+     ============================================================================
+
+     INSTRUCTIONS POUR WEBFLOW CMS :
+
+     1. Numéro WhatsApp (obligatoire) :
+        - Remplacez '33686336239' par votre numéro
+        - Format international sans '+' ni espaces
+
+     2. Pour ajouter des champs CMS Webflow :
+
+        A) Assurez-vous d'être sur une Collection Template Page
+
+        B) Dans le code ci-dessous, trouvez la ligne :
+           <span id="wa-cms-name"></span>
+
+        C) SÉLECTIONNEZ UNIQUEMENT le texte entre les balises span
+           (ne sélectionnez PAS les balises <span> elles-mêmes)
+
+        D) Cliquez sur l'icône "+" (Add Field) dans la barre d'outils Webflow
+
+        E) Choisissez votre champ CMS (ex: "Name", "First Name", etc.)
+
+        F) Répétez pour le champ Company si besoin
+
+     3. Si vous n'utilisez PAS de CMS :
+        - Supprimez les balises span
+        - Ou remplacez par du texte fixe
+
+     ============================================================================ -->
+
+<div style="display:none;">
+    <!-- Sélectionnez UNIQUEMENT le contenu entre les balises span (pas les balises elles-mêmes)
+         puis cliquez sur "+" pour ajouter votre champ CMS "Name" -->
+    <span id="wa-cms-name"></span>
+
+    <!-- Sélectionnez UNIQUEMENT le contenu entre les balises span (pas les balises elles-mêmes)
+         puis cliquez sur "+" pour ajouter votre champ CMS "Company" -->
+    <span id="wa-cms-company"></span>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // Protection contre le double chargement
+    if (window.waWidgetLoaded) {
+        console.log('WhatsApp Widget: Déjà chargé, ignore');
+        return;
+    }
+    window.waWidgetLoaded = true;
+
+    // ========================================
+    // 📞 CONFIGURATION - Modifiez votre numéro ici
+    // ========================================
+    var PHONE_NUMBER = '33686336239';  // ← Remplacez par votre numéro au format international
+
+    // ========================================
+    // 📋 RÉCUPÉRATION DES CHAMPS CMS
+    // ========================================
+    var userNameElement = document.getElementById('wa-cms-name');
+    var companyNameElement = document.getElementById('wa-cms-company');
+
+    var userName = null;
+    var companyName = null;
+
+    // Récupération et nettoyage du nom
+    if (userNameElement && userNameElement.textContent.trim() !== '') {
+        userName = userNameElement.textContent.trim();
+    }
+
+    // Récupération et nettoyage du nom d'entreprise
+    if (companyNameElement && companyNameElement.textContent.trim() !== '') {
+        companyName = companyNameElement.textContent.trim();
+    }
+
+    console.log('WhatsApp Widget: Name =', userName, 'Company =', companyName);
+
+    // ========================================
+    // 🔧 INITIALISATION DU WIDGET
+    // ========================================
+    var pendingWhatsAppURL = null;
+    var autoOpenTimer = null;
+    var messagesAlreadyShown = false;
+
+    var waBtn = document.getElementById('wa-widget-btn');
+    var waWindow = document.getElementById('wa-widget-window');
+    var waCloseBtn = document.getElementById('waCloseBtn');
+    var waInput = document.getElementById('waInput');
+    var waSendBtn = document.getElementById('waSendBtn');
+    var waMessages = document.getElementById('waMessages');
+    var waTyping = document.getElementById('waTyping');
+    var waStatus = document.getElementById('waStatus');
+    var waModal = document.getElementById('waModal');
+    var waOpenBtn = document.getElementById('waOpenBtn');
+    var waCancelBtn = document.getElementById('waCancelBtn');
+
+    if (!waBtn || !waWindow) {
+        console.error('WhatsApp Widget: Éléments DOM manquants');
+        return;
+    }
+
+    // ========================================
+    // 🔊 GESTION DU SON
+    // ========================================
+    var audioCache = null;
+    function playNotificationSound() {
+        try {
+            if (!audioCache) {
+                audioCache = new Audio('https://res.cloudinary.com/dqfnvegv2/video/upload/v1764081908/whatsapp-for-web_jvbhrm.mp3');
+                audioCache.volume = 0.7;
+                audioCache.preload = 'auto';
+            }
+            var sound = audioCache.cloneNode();
+            sound.volume = 0.7;
+            sound.play()
+                .then(function() { console.log('Son WhatsApp joué'); })
+                .catch(function(err) { console.log('Son bloqué:', err); });
+        } catch (error) {
+            console.log('Erreur son:', error);
+        }
+    }
+
+    // ========================================
+    // 💬 AFFICHAGE DES MESSAGES INITIAUX
+    // ========================================
+    function showLiveMessages() {
+        if (messagesAlreadyShown) {
+            console.log('WhatsApp Widget: Messages déjà affichés, skip');
+            return;
+        }
+        messagesAlreadyShown = true;
+
+        var now = new Date();
+        var time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+        // Message 1 : Bonjour (personnalisé si nom disponible)
+        var firstMessageText = userName ? 'Bonjour ' + userName : 'Bonjour';
+
+        // Message 2 : Présentation
+        var secondMessageText = 'Je suis Florian, le co-fondateur d\'Aura';
+
+        // Message 3 : Question (personnalisée si entreprise disponible)
+        var thirdMessageText = companyName
+            ? 'Avez-vous déjà fait des campagnes d\'ajouts et de messages sur LinkedIn pour ' + companyName + ' ?'
+            : 'Avez-vous déjà fait des campagnes d\'ajouts et de messages sur LinkedIn ?';
+
+        // Animation du premier message
+        waStatus.innerHTML = 'En train d\'écrire...';
+        waStatus.classList.add('wa-typing');
+        waTyping.classList.add('wa-active');
+
+        setTimeout(function() {
+            waTyping.classList.remove('wa-active');
+            waStatus.innerHTML = '<span class="wa-online-dot"></span> En ligne';
+            waStatus.classList.remove('wa-typing');
+            playNotificationSound();
+
+            var messageDiv1 = document.createElement('div');
+            messageDiv1.className = 'wa-message wa-received';
+            messageDiv1.innerHTML = '<div class="wa-message-bubble">' + firstMessageText + '<div class="wa-message-time">' + time + '</div></div>';
+            waMessages.insertBefore(messageDiv1, waTyping);
+            waMessages.scrollTop = waMessages.scrollHeight;
+
+            // Animation du deuxième message
+            setTimeout(function() {
+                waStatus.innerHTML = 'En train d\'écrire...';
+                waStatus.classList.add('wa-typing');
+                waTyping.classList.add('wa-active');
+
+                setTimeout(function() {
+                    waTyping.classList.remove('wa-active');
+                    waStatus.innerHTML = '<span class="wa-online-dot"></span> En ligne';
+                    waStatus.classList.remove('wa-typing');
+                    playNotificationSound();
+
+                    var messageDiv2 = document.createElement('div');
+                    messageDiv2.className = 'wa-message wa-received';
+                    messageDiv2.innerHTML = '<div class="wa-message-bubble">' + secondMessageText + '<div class="wa-message-time">' + time + '</div></div>';
+                    waMessages.insertBefore(messageDiv2, waTyping);
+                    waMessages.scrollTop = waMessages.scrollHeight;
+
+                    // Animation du troisième message
+                    setTimeout(function() {
+                        waStatus.innerHTML = 'En train d\'écrire...';
+                        waStatus.classList.add('wa-typing');
+                        waTyping.classList.add('wa-active');
+
+                        setTimeout(function() {
+                            waTyping.classList.remove('wa-active');
+                            waStatus.innerHTML = '<span class="wa-online-dot"></span> En ligne';
+                            waStatus.classList.remove('wa-typing');
+                            playNotificationSound();
+
+                            var messageDiv3 = document.createElement('div');
+                            messageDiv3.className = 'wa-message wa-received';
+                            messageDiv3.innerHTML = '<div class="wa-message-bubble">' + thirdMessageText + '<div class="wa-message-time">' + time + '</div></div>';
+                            waMessages.insertBefore(messageDiv3, waTyping);
+                            waMessages.scrollTop = waMessages.scrollHeight;
+                        }, 5000);
+                    }, 800);
+                }, 4000);
+            }, 800);
+        }, 3500);
+    }
+
+    // ========================================
+    // 📨 GESTION DES MESSAGES
+    // ========================================
+    function addMessage(text, type) {
+        if (type === 'sent') {
+            playNotificationSound();
+        }
+
+        var messageDiv = document.createElement('div');
+        messageDiv.className = 'wa-message wa-' + type;
+
+        var now = new Date();
+        var time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        var checkmark = type === 'sent' ? '<span>✓✓</span>' : '';
+
+        messageDiv.innerHTML = '<div class="wa-message-bubble">' + text + '<div class="wa-message-time">' + time + ' ' + checkmark + '</div></div>';
+        waMessages.insertBefore(messageDiv, waTyping);
+        waMessages.scrollTop = waMessages.scrollHeight;
+    }
+
+    function simulateResponse() {
+        waStatus.innerHTML = 'En train d\'écrire...';
+        waStatus.classList.add('wa-typing');
+        waTyping.classList.add('wa-active');
+
+        setTimeout(function() {
+            waTyping.classList.remove('wa-active');
+            waStatus.innerHTML = '<span class="wa-online-dot"></span> En ligne';
+            waStatus.classList.remove('wa-typing');
+            playNotificationSound();
+
+            var responseMessage = userName
+                ? 'Merci ' + userName + '. Je vous réponds dans les plus brefs délais'
+                : 'Merci pour votre message. Je vous réponds dans les plus brefs délais';
+
+            addMessage(responseMessage, 'received');
+        }, 2000);
+    }
+
+    function sendMessage() {
+        var message = waInput.value.trim();
+        if (message === '') return;
+
+        addMessage(message, 'sent');
+        waInput.value = '';
+
+        setTimeout(function() {
+            simulateResponse();
+        }, 1000);
+
+        // Préparation du message WhatsApp avec contexte
+        var whatsappMessage = message;
+        if (userName && companyName) {
+            whatsappMessage = 'Bonjour Florian, je suis ' + userName + ' de ' + companyName + '. ' + message;
+        } else if (userName) {
+            whatsappMessage = 'Bonjour Florian, je suis ' + userName + '. ' + message;
+        }
+
+        // Ouverture du modal après 3 secondes
+        setTimeout(function() {
+            var whatsappURL = 'https://wa.me/' + PHONE_NUMBER + '?text=' + encodeURIComponent(whatsappMessage);
+            pendingWhatsAppURL = whatsappURL;
+            waModal.classList.add('wa-show');
+        }, 3000);
+    }
+
+    // ========================================
+    // 🎬 ÉVÉNEMENTS ET INTERACTIONS
+    // ========================================
+
+    // Ouverture automatique après 5 secondes
+    autoOpenTimer = setTimeout(function() {
+        console.log('WhatsApp Widget: Ouverture automatique');
+        waWindow.classList.add('wa-open');
+        waWindow.style.setProperty('display', 'flex', 'important');
+        showLiveMessages();
+    }, 5000);
+
+    // Clic sur le bouton flottant
+    waBtn.addEventListener('click', function() {
+        console.log('WhatsApp Widget: Clic sur le bouton');
+        clearTimeout(autoOpenTimer);
+        waWindow.classList.add('wa-open');
+        waWindow.style.setProperty('display', 'flex', 'important');
+        showLiveMessages();
+    });
+
+    // Fermeture de la fenêtre
+    waCloseBtn.addEventListener('click', function() {
+        waWindow.classList.remove('wa-open');
+        waWindow.style.display = 'none';
+    });
+
+    // Envoi du message
+    waSendBtn.addEventListener('click', sendMessage);
+    waInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    // Gestion du modal
+    waOpenBtn.addEventListener('click', function() {
+        if (pendingWhatsAppURL) {
+            window.open(pendingWhatsAppURL, '_blank');
+            waModal.classList.remove('wa-show');
+            pendingWhatsAppURL = null;
+        }
+    });
+
+    waCancelBtn.addEventListener('click', function() {
+        waModal.classList.remove('wa-show');
+        pendingWhatsAppURL = null;
+    });
+
+    waModal.addEventListener('click', function(e) {
+        if (e.target === waModal) {
+            waModal.classList.remove('wa-show');
+            pendingWhatsAppURL = null;
+        }
+    });
+})();
+</script>
