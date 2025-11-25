@@ -371,6 +371,34 @@
             color: #fff;
         }
 
+        .pagination-btn {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            color: #e5e5e5;
+            padding: 0.5rem 1rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            min-width: 40px;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #252525;
+            border-color: #333;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+        }
+
         .loading {
             text-align: center;
             padding: 3rem;
@@ -769,6 +797,25 @@
                     <button class="export-btn" onclick="exportCSV()">EXPORT CSV</button>
                 </div>
             </div>
+            <div style="padding: 1.5rem; border-bottom: 1px solid #222; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search by name or email..."
+                    style="flex: 1; min-width: 250px; padding: 0.5rem 1rem; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 3px; font-size: 0.875rem; color: #e5e5e5; outline: none;"
+                />
+                <select id="statusFilter" style="padding: 0.5rem 1rem; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 3px; font-size: 0.875rem; color: #e5e5e5; cursor: pointer; outline: none;">
+                    <option value="all">All Status</option>
+                    <option value="clicked">Clicked Only</option>
+                    <option value="not_clicked">Not Clicked</option>
+                </select>
+                <select id="perPageSelect" style="padding: 0.5rem 1rem; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 3px; font-size: 0.875rem; color: #e5e5e5; cursor: pointer; outline: none;">
+                    <option value="25">25 per page</option>
+                    <option value="50" selected>50 per page</option>
+                    <option value="100">100 per page</option>
+                    <option value="200">200 per page</option>
+                </select>
+            </div>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -789,6 +836,10 @@
                     </tbody>
                 </table>
             </div>
+            <div id="paginationContainer" style="padding: 1.5rem; border-top: 1px solid #222; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div id="paginationInfo" style="color: #888; font-size: 0.875rem;"></div>
+                <div id="paginationButtons" style="display: flex; gap: 0.5rem;"></div>
+            </div>
         </div>
     </div>
 
@@ -800,6 +851,14 @@
         let timelineChart = null;
         let icpChart = null;
         let sankeyData = { totalLinks: 0, totalClicks: 0, uniqueVisitors: 0 };
+
+        // Pagination and filter state
+        let currentPage = 1;
+        let perPage = 50;
+        let searchQuery = '';
+        let statusFilter = 'all';
+        let paginationData = null;
+        let searchTimeout = null;
 
         // Time filter buttons
         document.querySelectorAll('.time-btn').forEach(btn => {
@@ -1252,14 +1311,32 @@
             document.getElementById('heatmapContainer').innerHTML = html;
         }
 
-        // Load clicks
+        // Load clicks with pagination and filters
         async function loadClicks() {
             try {
-                const url = currentCampaign ? `/api/clicks?campaign=${currentCampaign}` : '/api/clicks';
-                const response = await fetch(url);
-                allClicks = await response.json();
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    per_page: perPage
+                });
+
+                if (currentCampaign) {
+                    params.append('campaign', currentCampaign);
+                }
+                if (searchQuery) {
+                    params.append('search', searchQuery);
+                }
+                if (statusFilter !== 'all') {
+                    params.append('status', statusFilter);
+                }
+
+                const response = await fetch(`/api/clicks?${params}`);
+                const data = await response.json();
+
+                allClicks = data.data;
+                paginationData = data.pagination;
 
                 renderClicksTable(allClicks);
+                renderPagination();
             } catch (error) {
                 console.error('Error loading clicks:', error);
             }
@@ -1484,28 +1561,143 @@
             });
         }
 
-        // Export CSV
-        function exportCSV() {
-            const headers = ['First Name', 'Last Name', 'Email', 'ICP', 'Campaign', 'Clicks', 'First Click', 'Last Click', 'Status'];
-            const rows = allClicks.map(click => [
-                click.first_name,
-                click.last_name,
-                click.email || '',
-                click.icp || 'Non défini',
-                click.campaign,
-                click.click_count,
-                click.first_clicked ? formatDate(click.first_clicked) : '',
-                click.last_clicked ? formatDate(click.last_clicked) : '',
-                click.click_count > 0 ? 'Clicked' : 'Not clicked'
-            ]);
+        // Render pagination controls
+        function renderPagination() {
+            if (!paginationData) return;
 
-            const csv = [headers, ...rows].map(row => row.join(',')).join('\\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `clicks_export_${Date.now()}.csv`;
-            a.click();
+            const { page, total, total_pages, has_prev, has_next } = paginationData;
+
+            // Update info text
+            const start = (page - 1) * perPage + 1;
+            const end = Math.min(page * perPage, total);
+            document.getElementById('paginationInfo').textContent =
+                `Showing ${start}-${end} of ${total} results`;
+
+            // Build pagination buttons
+            const buttonsContainer = document.getElementById('paginationButtons');
+            buttonsContainer.innerHTML = '';
+
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'pagination-btn';
+            prevBtn.textContent = '← Prev';
+            prevBtn.disabled = !has_prev;
+            prevBtn.onclick = () => goToPage(page - 1);
+            buttonsContainer.appendChild(prevBtn);
+
+            // Page numbers
+            const maxButtons = 5;
+            let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
+            let endPage = Math.min(total_pages, startPage + maxButtons - 1);
+
+            if (endPage - startPage < maxButtons - 1) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            // First page
+            if (startPage > 1) {
+                const btn = createPageButton(1);
+                buttonsContainer.appendChild(btn);
+                if (startPage > 2) {
+                    const dots = document.createElement('span');
+                    dots.textContent = '...';
+                    dots.style.padding = '0.5rem';
+                    dots.style.color = '#666';
+                    buttonsContainer.appendChild(dots);
+                }
+            }
+
+            // Middle pages
+            for (let i = startPage; i <= endPage; i++) {
+                const btn = createPageButton(i);
+                buttonsContainer.appendChild(btn);
+            }
+
+            // Last page
+            if (endPage < total_pages) {
+                if (endPage < total_pages - 1) {
+                    const dots = document.createElement('span');
+                    dots.textContent = '...';
+                    dots.style.padding = '0.5rem';
+                    dots.style.color = '#666';
+                    buttonsContainer.appendChild(dots);
+                }
+                const btn = createPageButton(total_pages);
+                buttonsContainer.appendChild(btn);
+            }
+
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'pagination-btn';
+            nextBtn.textContent = 'Next →';
+            nextBtn.disabled = !has_next;
+            nextBtn.onclick = () => goToPage(page + 1);
+            buttonsContainer.appendChild(nextBtn);
+        }
+
+        function createPageButton(pageNum) {
+            const btn = document.createElement('button');
+            btn.className = 'pagination-btn';
+            if (pageNum === currentPage) {
+                btn.classList.add('active');
+            }
+            btn.textContent = pageNum;
+            btn.onclick = () => goToPage(pageNum);
+            return btn;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadClicks();
+        }
+
+        // Export CSV (exports all data, not just current page)
+        async function exportCSV() {
+            try {
+                // Fetch all data for export
+                const params = new URLSearchParams({
+                    page: 1,
+                    per_page: 10000  // Large number to get all
+                });
+
+                if (currentCampaign) {
+                    params.append('campaign', currentCampaign);
+                }
+                if (searchQuery) {
+                    params.append('search', searchQuery);
+                }
+                if (statusFilter !== 'all') {
+                    params.append('status', statusFilter);
+                }
+
+                const response = await fetch(`/api/clicks?${params}`);
+                const data = await response.json();
+                const allData = data.data;
+
+                const headers = ['First Name', 'Last Name', 'Email', 'ICP', 'Campaign', 'Clicks', 'First Click', 'Last Click', 'Status'];
+                const rows = allData.map(click => [
+                    click.first_name,
+                    click.last_name,
+                    click.email || '',
+                    click.icp || 'Non défini',
+                    click.campaign,
+                    click.click_count,
+                    click.first_clicked ? formatDate(click.first_clicked) : '',
+                    click.last_clicked ? formatDate(click.last_clicked) : '',
+                    click.click_count > 0 ? 'Clicked' : 'Not clicked'
+                ]);
+
+                const csv = [headers, ...rows].map(row => row.join(',')).join('\\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `clicks_export_${Date.now()}.csv`;
+                a.click();
+            } catch (error) {
+                console.error('Error exporting CSV:', error);
+                alert('Error exporting data');
+            }
         }
 
         // Restore UI state on page load
@@ -1520,12 +1712,41 @@
             });
         }
 
+        // Filter event listeners
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            // Debounce search
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchQuery = e.target.value;
+                currentPage = 1;  // Reset to first page
+                loadClicks();
+            }, 300);
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', (e) => {
+            statusFilter = e.target.value;
+            currentPage = 1;  // Reset to first page
+            loadClicks();
+        });
+
+        document.getElementById('perPageSelect').addEventListener('change', (e) => {
+            perPage = parseInt(e.target.value);
+            currentPage = 1;  // Reset to first page
+            loadClicks();
+        });
+
         // Initial load
         restoreUIState();
         loadAllData();
 
-        // Auto refresh every 30s
-        setInterval(loadAllData, 30000);
+        // Auto refresh every 30s (but don't reset pagination)
+        setInterval(() => {
+            loadAnalytics();
+            loadTimeline();
+            loadHeatmap();
+            loadClicks();
+            loadICPStats();
+        }, 30000);
     </script>
 </body>
 </html>

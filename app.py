@@ -326,12 +326,17 @@ def get_analytics():
 
 @app.route('/api/clicks')
 def get_clicks():
-    """Get detailed click data with person info"""
+    """Get detailed click data with person info - with pagination and filtering"""
     campaign = request.args.get('campaign', '')
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 50))
+    search = request.args.get('search', '')
+    status_filter = request.args.get('status', 'all')  # all, clicked, not_clicked
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
+    # Base query
     query = '''
         SELECT
             l.link_id,
@@ -348,18 +353,102 @@ def get_clicks():
         LEFT JOIN clicks c ON l.link_id = c.link_id
     '''
 
-    if campaign:
-        query += ' WHERE l.campaign = %s'
-        cur.execute(query + ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at ORDER BY click_count DESC', (campaign,))
-    else:
-        cur.execute(query + ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at ORDER BY click_count DESC')
+    # Count query for pagination
+    count_query = '''
+        SELECT COUNT(DISTINCT l.link_id) as total
+        FROM links l
+        LEFT JOIN clicks c ON l.link_id = c.link_id
+    '''
 
+    # Build WHERE conditions
+    conditions = []
+    params = []
+
+    if campaign:
+        conditions.append('l.campaign = %s')
+        params.append(campaign)
+
+    if search:
+        search_condition = "(l.first_name ILIKE %s OR l.last_name ILIKE %s OR l.email ILIKE %s)"
+        conditions.append(search_condition)
+        search_param = f'%{search}%'
+        params.extend([search_param, search_param, search_param])
+
+    where_clause = ''
+    if conditions:
+        where_clause = ' WHERE ' + ' AND '.join(conditions)
+
+    # Add WHERE clause to both queries
+    query += where_clause
+    count_query += where_clause
+
+    # Group by for main query
+    query += ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at'
+
+    # Apply status filter after GROUP BY using HAVING
+    if status_filter == 'clicked':
+        query += ' HAVING COUNT(c.id) > 0'
+    elif status_filter == 'not_clicked':
+        query += ' HAVING COUNT(c.id) = 0'
+
+    # Get total count
+    cur.execute(count_query, params)
+    total = cur.fetchone()['total']
+
+    # Apply status filter to count if needed
+    if status_filter == 'clicked':
+        count_filtered = '''
+            SELECT COUNT(*) as total FROM (
+                SELECT l.link_id
+                FROM links l
+                LEFT JOIN clicks c ON l.link_id = c.link_id
+                {where}
+                GROUP BY l.link_id
+                HAVING COUNT(c.id) > 0
+            ) as filtered
+        '''.format(where=where_clause)
+        cur.execute(count_filtered, params)
+        total = cur.fetchone()['total']
+    elif status_filter == 'not_clicked':
+        count_filtered = '''
+            SELECT COUNT(*) as total FROM (
+                SELECT l.link_id
+                FROM links l
+                LEFT JOIN clicks c ON l.link_id = c.link_id
+                {where}
+                GROUP BY l.link_id
+                HAVING COUNT(c.id) = 0
+            ) as filtered
+        '''.format(where=where_clause)
+        cur.execute(count_filtered, params)
+        total = cur.fetchone()['total']
+
+    # Add ordering and pagination
+    query += ' ORDER BY click_count DESC, l.created_at DESC'
+    offset = (page - 1) * per_page
+    query += f' LIMIT {per_page} OFFSET {offset}'
+
+    # Execute main query
+    cur.execute(query, params)
     clicks = cur.fetchall()
 
     cur.close()
     conn.close()
 
-    return jsonify(clicks)
+    # Calculate pagination metadata
+    total_pages = (total + per_page - 1) // per_page  # Ceiling division
+
+    return jsonify({
+        'data': clicks,
+        'pagination': {
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'total_pages': total_pages,
+            'has_next': page < total_pages,
+            'has_prev': page > 1
+        }
+    })
 
 @app.route('/api/campaigns')
 def get_campaigns():
