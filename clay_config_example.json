@@ -12,6 +12,9 @@
         "first_name": "{{first_name}}",
         "last_name": "{{last_name}}",
         "email": "{{email}}",
+        "company_name": "{{company_name}}",
+        "company_url": "{{company_url}}",
+        "linkedin_url": "{{linkedin_url}}",
         "campaign": "wesser-recrutement.fr",
         "destination_url": "https://wesser-recrutement.fr/rejoindre"
       }
@@ -25,7 +28,11 @@
     "notes": [
       "IMPORTANT: Remplacer 'REMPLACER-PAR-VOTRE-APP' par le nom exact de votre app Render",
       "IMPORTANT: Ne PAS modifier 'campaign': doit rester 'wesser-recrutement.fr'",
-      "Adapter {{first_name}}, {{last_name}}, {{email}} aux noms de vos colonnes Clay",
+      "Adapter {{first_name}}, {{last_name}}, {{email}}, {{company_name}}, {{company_url}}, {{linkedin_url}} aux noms de vos colonnes Clay",
+      "company_name: Nom de l'entreprise (ex: 'Google', 'Microsoft')",
+      "company_url: URL du site de l'entreprise (ex: 'https://google.com')",
+      "linkedin_url: URL du profil LinkedIn de la personne (ex: 'https://linkedin.com/in/john-doe')",
+      "Ces nouveaux champs sont OPTIONNELS - l'API fonctionnera même s'ils sont vides",
       "Remplacer destination_url par votre vraie landing page Wesser"
     ]
   },
@@ -40,6 +47,9 @@
         "first_name": "{{First Name}}",
         "last_name": "{{Last Name}}",
         "email": "{{Email Address}}",
+        "company_name": "{{Company Name}}",
+        "company_url": "{{Company Website}}",
+        "linkedin_url": "{{LinkedIn Profile}}",
         "campaign": "wesser-recrutement.fr",
         "destination_url": "https://wesser-recrutement.fr/rejoindre"
       }

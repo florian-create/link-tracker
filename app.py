@@ -57,6 +57,9 @@ def init_db():
             email VARCHAR(255),
             icp VARCHAR(255),
             campaign VARCHAR(255),
+            company_name VARCHAR(255),
+            company_url TEXT,
+            linkedin_url TEXT,
             destination_url TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -132,6 +135,9 @@ def create_link():
     email = data.get('email', '')
     icp = data.get('ICP', data.get('icp', ''))  # Support both ICP and icp
     campaign = data.get('campaign', 'default')
+    company_name = data.get('company_name', '')
+    company_url = data.get('company_url', '')
+    linkedin_url = data.get('linkedin_url', '')
     destination_url = data.get('destination_url')
 
     # Generate unique link ID
@@ -143,9 +149,9 @@ def create_link():
 
     try:
         cur.execute('''
-            INSERT INTO links (link_id, first_name, last_name, email, icp, campaign, destination_url)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        ''', (link_id, first_name, last_name, email, icp, campaign, destination_url))
+            INSERT INTO links (link_id, first_name, last_name, email, icp, campaign, company_name, company_url, linkedin_url, destination_url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ''', (link_id, first_name, last_name, email, icp, campaign, company_name, company_url, linkedin_url, destination_url))
 
         conn.commit()
 
@@ -345,6 +351,9 @@ def get_clicks():
             l.email,
             l.icp,
             l.campaign,
+            l.company_name,
+            l.company_url,
+            l.linkedin_url,
             l.created_at,
             COUNT(c.id) as click_count,
             MAX(c.clicked_at) as last_clicked,
@@ -383,7 +392,7 @@ def get_clicks():
     count_query += where_clause
 
     # Group by for main query
-    query += ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.created_at'
+    query += ' GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign, l.company_name, l.company_url, l.linkedin_url, l.created_at'
 
     # Apply status filter after GROUP BY using HAVING
     if status_filter == 'clicked':
