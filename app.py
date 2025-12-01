@@ -61,7 +61,9 @@ def init_db():
             company_url TEXT,
             linkedin_url TEXT,
             destination_url TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            sent_to_clay BOOLEAN DEFAULT FALSE,
+            sent_to_clay_at TIMESTAMP
         )
     ''')
 
@@ -741,6 +743,167 @@ def delete_link(link_id):
             return jsonify({'error': 'Link not found'}), 404
 
         return jsonify({'success': True, 'message': 'Link deleted'}), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/api/webhook/hot-leads', methods=['POST', 'GET'])
+def send_hot_leads_to_clay():
+    """Send leads with 5+ clicks to Clay webhook - Manual or automated trigger"""
+
+    # Get Clay webhook URL from request or environment
+    data = request.json if request.method == 'POST' else {}
+    clay_webhook_url = data.get('clay_webhook_url') or os.environ.get('CLAY_WEBHOOK_URL')
+
+    if not clay_webhook_url:
+        return jsonify({'error': 'clay_webhook_url is required. Provide it in the request body or set CLAY_WEBHOOK_URL environment variable'}), 400
+
+    # Get optional parameters
+    min_clicks = int(data.get('min_clicks', 5))  # Default: 5 clicks
+    campaign_filter = data.get('campaign', '')
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        # Find hot leads: 5+ clicks AND not yet sent to Clay
+        query = '''
+            SELECT
+                l.link_id,
+                l.first_name,
+                l.last_name,
+                l.email,
+                l.icp,
+                l.campaign,
+                l.company_name,
+                l.company_url,
+                l.linkedin_url,
+                l.destination_url,
+                l.created_at,
+                COUNT(c.id) as click_count,
+                MAX(c.clicked_at) as last_clicked,
+                MIN(c.clicked_at) as first_clicked
+            FROM links l
+            LEFT JOIN clicks c ON l.link_id = c.link_id
+            WHERE l.sent_to_clay = FALSE
+        '''
+
+        if campaign_filter:
+            query += f" AND l.campaign = '{campaign_filter}'"
+
+        query += f'''
+            GROUP BY l.link_id, l.first_name, l.last_name, l.email, l.icp, l.campaign,
+                     l.company_name, l.company_url, l.linkedin_url, l.destination_url, l.created_at
+            HAVING COUNT(c.id) >= {min_clicks}
+            ORDER BY COUNT(c.id) DESC
+        '''
+
+        cur.execute(query)
+        hot_leads = cur.fetchall()
+
+        if not hot_leads:
+            return jsonify({
+                'success': True,
+                'message': 'No hot leads found',
+                'sent_count': 0,
+                'min_clicks': min_clicks
+            }), 200
+
+        # Send each lead to Clay webhook
+        sent_count = 0
+        errors = []
+        sent_link_ids = []
+
+        for lead in hot_leads:
+            try:
+                # Prepare payload for Clay
+                payload = {
+                    'first_name': lead['first_name'],
+                    'last_name': lead['last_name'],
+                    'email': lead['email'],
+                    'company_name': lead['company_name'],
+                    'company_url': lead['company_url'],
+                    'linkedin_url': lead['linkedin_url'],
+                    'icp': lead['icp'],
+                    'campaign': lead['campaign'],
+                    'click_count': lead['click_count'],
+                    'first_clicked': lead['first_clicked'].isoformat() if lead['first_clicked'] else None,
+                    'last_clicked': lead['last_clicked'].isoformat() if lead['last_clicked'] else None,
+                    'link_id': lead['link_id'],
+                    'tracking_url': f"https://{os.getenv('CUSTOM_DOMAIN', 'link-tracker.onrender.com')}/c/{lead['link_id']}"
+                }
+
+                # Send to Clay webhook
+                response = requests.post(clay_webhook_url, json=payload, timeout=10)
+
+                if response.status_code in [200, 201, 202]:
+                    sent_count += 1
+                    sent_link_ids.append(lead['link_id'])
+                else:
+                    errors.append({
+                        'email': lead['email'],
+                        'error': f"Clay webhook returned {response.status_code}"
+                    })
+
+            except Exception as e:
+                errors.append({
+                    'email': lead['email'],
+                    'error': str(e)
+                })
+
+        # Mark sent leads as sent_to_clay
+        if sent_link_ids:
+            placeholders = ','.join(['%s'] * len(sent_link_ids))
+            cur.execute(f'''
+                UPDATE links
+                SET sent_to_clay = TRUE, sent_to_clay_at = NOW()
+                WHERE link_id IN ({placeholders})
+            ''', sent_link_ids)
+            conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Sent {sent_count} hot leads to Clay',
+            'sent_count': sent_count,
+            'total_found': len(hot_leads),
+            'min_clicks': min_clicks,
+            'errors': errors if errors else None
+        }), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/api/webhook/reset-clay-status', methods=['POST'])
+def reset_clay_status():
+    """Reset sent_to_clay status for testing purposes"""
+    data = request.json or {}
+    email = data.get('email')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        if email:
+            cur.execute('UPDATE links SET sent_to_clay = FALSE, sent_to_clay_at = NULL WHERE email = %s', (email,))
+        else:
+            cur.execute('UPDATE links SET sent_to_clay = FALSE, sent_to_clay_at = NULL')
+
+        conn.commit()
+        count = cur.rowcount
+
+        return jsonify({
+            'success': True,
+            'message': f'Reset {count} link(s)',
+            'count': count
+        }), 200
 
     except Exception as e:
         conn.rollback()
