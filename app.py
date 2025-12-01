@@ -651,6 +651,77 @@ def get_timeline():
 
     return jsonify(timeline_data)
 
+@app.route('/api/update-link', methods=['POST', 'PUT'])
+def update_link():
+    """Update an existing link with new company and LinkedIn information"""
+    data = request.json
+
+    # Need at least one identifier to find the link
+    email = data.get('email')
+    link_id = data.get('link_id')
+
+    if not email and not link_id:
+        return jsonify({'error': 'email or link_id is required to identify the link'}), 400
+
+    # Get the fields to update
+    company_name = data.get('company_name')
+    company_url = data.get('company_url')
+    linkedin_url = data.get('linkedin_url')
+
+    # Build update query dynamically based on provided fields
+    update_fields = []
+    params = []
+
+    if company_name is not None:
+        update_fields.append('company_name = %s')
+        params.append(company_name)
+
+    if company_url is not None:
+        update_fields.append('company_url = %s')
+        params.append(company_url)
+
+    if linkedin_url is not None:
+        update_fields.append('linkedin_url = %s')
+        params.append(linkedin_url)
+
+    if not update_fields:
+        return jsonify({'error': 'No fields to update. Provide company_name, company_url, or linkedin_url'}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        # Build WHERE clause
+        where_clause = 'link_id = %s' if link_id else 'email = %s'
+        identifier = link_id if link_id else email
+        params.append(identifier)
+
+        # Execute update
+        query = f"UPDATE links SET {', '.join(update_fields)} WHERE {where_clause}"
+        cur.execute(query, params)
+
+        conn.commit()
+
+        if cur.rowcount == 0:
+            return jsonify({'error': 'Link not found', 'searched_by': 'link_id' if link_id else 'email', 'value': identifier}), 404
+
+        # Return updated link info
+        cur.execute('SELECT * FROM links WHERE ' + where_clause, (identifier,))
+        updated_link = cur.fetchone()
+
+        return jsonify({
+            'success': True,
+            'message': f'Updated {cur.rowcount} link(s)',
+            'link': updated_link
+        }), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
 @app.route('/api/links/<link_id>', methods=['DELETE'])
 def delete_link(link_id):
     """Delete a link and all its associated clicks"""
