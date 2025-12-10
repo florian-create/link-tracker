@@ -1,5 +1,6 @@
-from flask import Flask, request, jsonify, redirect, render_template_string
+from flask import Flask, request, jsonify, redirect, render_template_string, session, url_for
 from flask_cors import CORS
+from functools import wraps
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -11,8 +12,29 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
+# Session configuration
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = True  # Enable in production with HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# Authorized users
+AUTHORIZED_USERS = {
+    'olivier@aura.camp': 'aura742446@',
+    'florian@aura.camp': 'aura742446@'
+}
+
 # Database configuration
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://localhost/link_tracker')
+
+# Login required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def get_db_connection():
     """Create database connection"""
@@ -101,12 +123,75 @@ def get_geo_info(ip):
         pass
     return 'Unknown', 'Unknown'
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page"""
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        if email in AUTHORIZED_USERS and AUTHORIZED_USERS[email] == password:
+            session['user'] = email
+            return redirect(url_for('index'))
+        else:
+            return render_template_string(LOGIN_HTML, error="Identifiants incorrects")
+
+    return render_template_string(LOGIN_HTML)
+
+@app.route('/logout')
+def logout():
+    """Logout"""
+    session.pop('user', None)
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def index():
     """Dashboard homepage"""
     try:
         with open('dashboard_corporate.html', 'r') as f:
-            return f.read()
+            dashboard_html = f.read()
+            # Add logout button to dashboard
+            logout_button = '''
+            <style>
+                .logout-btn {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 0.75rem 1.5rem;
+                    background: rgba(255, 255, 255, 0.2);
+                    color: white;
+                    border: 2px solid white;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    text-decoration: none;
+                    transition: all 0.2s;
+                    z-index: 1000;
+                }
+                .logout-btn:hover {
+                    background: white;
+                    color: #667eea;
+                }
+                .user-info {
+                    position: fixed;
+                    top: 80px;
+                    right: 20px;
+                    padding: 0.5rem 1rem;
+                    background: rgba(255, 255, 255, 0.95);
+                    color: #667eea;
+                    border-radius: 8px;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    z-index: 1000;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                }
+            </style>
+            <a href="/logout" class="logout-btn">Déconnexion</a>
+            <div class="user-info">👤 ''' + session.get('user', '') + '''</div>
+            '''
+            dashboard_html = dashboard_html.replace('</head>', logout_button + '</head>')
+            return dashboard_html
     except:
         return render_template_string(DASHBOARD_HTML)
 
@@ -911,6 +996,165 @@ def reset_clay_status():
     finally:
         cur.close()
         conn.close()
+
+# Login HTML Template
+LOGIN_HTML = '''
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Link Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .login-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 1rem;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 0.875rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">🔐</div>
+            <h1>Link Tracker</h1>
+            <p>Connectez-vous pour accéder au dashboard</p>
+        </div>
+
+        {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/login">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="olivier@aura.camp" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" name="password" placeholder="Entrez votre mot de passe" required>
+            </div>
+
+            <button type="submit" class="login-btn">Se connecter</button>
+        </form>
+    </div>
+</body>
+</html>
+'''
 
 # Dashboard HTML Template
 DASHBOARD_HTML = '''
