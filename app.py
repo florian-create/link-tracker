@@ -1013,8 +1013,9 @@ LOGIN_HTML = '''
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e5e5e5;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -1023,28 +1024,52 @@ LOGIN_HTML = '''
         }
 
         .login-container {
-            background: white;
+            background: #111;
+            border: 1px solid #222;
             padding: 3rem;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             width: 100%;
-            max-width: 400px;
+            max-width: 440px;
         }
 
         .login-header {
             text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
             margin-bottom: 2rem;
         }
 
-        .login-header h1 {
-            font-size: 2rem;
-            color: #2c3e50;
+        .logo-icon {
+            font-size: 2.5rem;
             margin-bottom: 0.5rem;
         }
 
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-subtitle {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #666;
+            letter-spacing: 0.5px;
+            text-transform: lowercase;
+        }
+
         .login-header p {
-            color: #718096;
+            color: #888;
             font-size: 0.95rem;
+            margin-top: 0.5rem;
         }
 
         .form-group {
@@ -1053,44 +1078,57 @@ LOGIN_HTML = '''
 
         .form-group label {
             display: block;
-            font-weight: 600;
-            color: #4a5568;
+            font-weight: 500;
+            color: #e5e5e5;
             margin-bottom: 0.5rem;
             font-size: 0.875rem;
+            letter-spacing: 0.2px;
         }
 
         .form-group input {
             width: 100%;
             padding: 0.875rem 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
             font-size: 1rem;
+            color: #e5e5e5;
             transition: all 0.2s;
             outline: none;
         }
 
+        .form-group input::placeholder {
+            color: #555;
+        }
+
         .form-group input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #444;
+            background: #222;
+        }
+
+        .form-group input:hover {
+            border-color: #333;
         }
 
         .login-btn {
             width: 100%;
             padding: 1rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #fff;
+            color: #0a0a0a;
             border: none;
-            border-radius: 10px;
+            border-radius: 6px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.2s;
             margin-top: 1rem;
+            letter-spacing: 0.3px;
         }
 
         .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            background: #f5f5f5;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
         }
 
         .login-btn:active {
@@ -1098,19 +1136,15 @@ LOGIN_HTML = '''
         }
 
         .error-message {
-            background: #fed7d7;
-            color: #c53030;
+            background: #2a1515;
+            border: 1px solid #4a2020;
+            color: #ff6b6b;
             padding: 0.875rem;
-            border-radius: 10px;
+            border-radius: 6px;
             margin-bottom: 1.5rem;
             font-size: 0.875rem;
             text-align: center;
-            font-weight: 600;
-        }
-
-        .logo {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+            font-weight: 500;
         }
 
         @media (max-width: 480px) {
@@ -1118,8 +1152,8 @@ LOGIN_HTML = '''
                 padding: 2rem 1.5rem;
             }
 
-            .login-header h1 {
-                font-size: 1.5rem;
+            .logo-text {
+                font-size: 1.25rem;
             }
         }
     </style>
@@ -1127,8 +1161,11 @@ LOGIN_HTML = '''
 <body>
     <div class="login-container">
         <div class="login-header">
-            <div class="logo">🔐</div>
-            <h1>Link Tracker</h1>
+            <div class="logo">
+                <div class="logo-icon">🔐</div>
+                <div class="logo-text">Link Tracker</div>
+                <div class="logo-subtitle">analytics dashboard</div>
+            </div>
             <p>Connectez-vous pour accéder au dashboard</p>
         </div>
 
@@ -1146,7 +1183,7 @@ LOGIN_HTML = '''
 
             <div class="form-group">
                 <label for="password">Mot de passe</label>
-                <input type="password" id="password" name="password" placeholder="Entrez votre mot de passe" required>
+                <input type="password" id="password" name="password" placeholder="••••••••••" required>
             </div>
 
             <button type="submit" class="login-btn">Se connecter</button>
