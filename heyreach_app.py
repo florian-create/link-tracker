@@ -22,7 +22,7 @@ def heyreach_login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('heyreach_logged_in'):
-            return redirect(url_for('heyreach_login'))
+            return redirect('/heyreach/login')
         return f(*args, **kwargs)
     return decorated_function
 
@@ -143,7 +143,7 @@ def init_heyreach_routes(app):
             if username in HEYREACH_USERS and HEYREACH_USERS[username] == password:
                 session['heyreach_logged_in'] = True
                 session['heyreach_username'] = username
-                return redirect(url_for('heyreach_dashboard'))
+                return redirect('/heyreach/dashboard')
 
             return render_template('login.html', error="Identifiants incorrects")
 
@@ -158,7 +158,7 @@ def init_heyreach_routes(app):
     def heyreach_logout():
         session.pop('heyreach_logged_in', None)
         session.pop('heyreach_username', None)
-        return redirect(url_for('heyreach_login'))
+        return redirect('/heyreach/login')
 
     @app.route('/heyreach/api/campaigns', methods=['POST'])
     @heyreach_login_required

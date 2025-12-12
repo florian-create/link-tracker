@@ -11,7 +11,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    {% if session.get('user') or session.get('logged_in') %}
+    {% if session.get('user') or session.get('logged_in') or session.get('heyreach_logged_in') %}
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
@@ -32,7 +32,7 @@
             </a>
         </nav>
         <div class="sidebar-footer">
-            <a href="{{ url_for('heyreach_logout') if request.path.startswith('/heyreach') else url_for('logout') }}" class="sidebar-link">
+            <a href="{% if request.path.startswith('/heyreach') %}/heyreach/logout{% else %}/logout{% endif %}" class="sidebar-link">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6 14H3.5C3.22386 14 3 13.7761 3 13.5V2.5C3 2.22386 3.22386 2 3.5 2H6M11 11L14 8M14 8L11 5M14 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
