@@ -3,7 +3,7 @@ services:
     name: link-tracker
     env: python
     buildCommand: pip install -r requirements.txt && python init_db.py
-    startCommand: gunicorn app:app --timeout 1800 --workers 2 --threads 4
+    startCommand: gunicorn app:app -c gunicorn_config.py
     envVars:
       - key: DATABASE_URL
         fromDatabase:
