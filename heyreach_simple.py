@@ -251,14 +251,20 @@ def init_heyreach_routes(app):
             output = io.StringIO()
             writer = csv.writer(output)
 
-            # Header with campaign, dates, and 30 message columns
+            # Header with all useful lead info and 30 message columns
             header = [
                 'Lead Name',
+                'Email',
+                'Company',
+                'Position',
+                'Location',
                 'Profile URL',
                 'Campaign',
+                'LinkedIn Account',
                 'First Message Date',
                 'Last Message Date',
-                'Total Messages'
+                'Total Messages',
+                'Tags'
             ]
             # Add Message_1 to Message_30 columns
             for i in range(1, 31):
@@ -273,12 +279,26 @@ def init_heyreach_routes(app):
                 conversation_id = conv.get('id', '')
                 account_id = conv.get('linkedInAccountId', '')
 
+                # Get LinkedIn account info
+                linkedin_account = conv.get('linkedInAccount', {})
+                linkedin_account_name = f"{linkedin_account.get('firstName', '')} {linkedin_account.get('lastName', '')}".strip()
+
+                # Get campaign name - try both fields
+                campaign_name = conv.get('campaignName', '') or f"Campaign {conv.get('campaignId', 'Unknown')}"
+
+                # Debug log for campaign
+                if not conv.get('campaignName'):
+                    print(f"Warning: No campaignName for conversation {conversation_id}, campaignId: {conv.get('campaignId')}")
+
                 # Get all messages for this conversation using GetChatroom
                 messages = api.get_conversation_with_messages(account_id, conversation_id)
 
                 # Get first and last message dates
                 first_message_date = messages[0].get('createdAt', '') if messages else ''
                 last_message_date = messages[-1].get('createdAt', '') if messages else conv.get('lastMessageAt', '')
+
+                # Get tags as comma-separated string
+                tags = ', '.join(profile.get('tags', []))
 
                 # Extract message text from 'body' field and format with sender
                 message_texts = []
@@ -297,11 +317,17 @@ def init_heyreach_routes(app):
 
                 row = [
                     lead_name or 'N/A',
+                    profile.get('emailAddress', ''),
+                    profile.get('companyName', ''),
+                    profile.get('position', '') or profile.get('headline', ''),
+                    profile.get('location', ''),
                     profile.get('profileUrl', ''),
-                    conv.get('campaignName', ''),
+                    campaign_name,
+                    linkedin_account_name or linkedin_account.get('emailAddress', ''),
                     first_message_date,
                     last_message_date,
-                    conv.get('totalMessages', 0)
+                    conv.get('totalMessages', 0),
+                    tags
                 ]
                 # Add all 30 message columns
                 row.extend(message_texts)
