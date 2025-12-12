@@ -3,8 +3,8 @@ HeyReach Exporter - Integrated into Link Tracker
 Toutes les fonctionnalités HeyReach avec préfixe /heyreach
 """
 
-from flask import render_template, request, jsonify, send_file, session, redirect, url_for
-from werkzeug.security import check_password_hash, generate_password_hash
+from flask import render_template, request, jsonify, send_file, session, redirect
+from werkzeug.security import check_password_hash
 from functools import wraps
 import requests
 import io
@@ -18,16 +18,16 @@ HEYREACH_USERS = {
     'florian@aura.camp': 'aura742446@'
 }
 
-def heyreach_login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not session.get('heyreach_logged_in'):
-            return redirect('/heyreach/login')
-        return f(*args, **kwargs)
-    return decorated_function
-
 def init_heyreach_routes(app):
     """Initialize HeyReach routes in the main app"""
+
+    def heyreach_login_required(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not session.get('heyreach_logged_in'):
+                return redirect('/heyreach/login')
+            return f(*args, **kwargs)
+        return decorated_function
 
     # HeyReach API Client
     class HeyReachAPI:
@@ -132,10 +132,12 @@ def init_heyreach_routes(app):
 
             return {"campaigns": all_campaigns, "totalCount": len(all_campaigns)}
 
-    # Routes
+    # ===== ROUTES =====
+
     @app.route('/heyreach')
     @app.route('/heyreach/login', methods=['GET', 'POST'])
     def heyreach_login():
+        """Login page for HeyReach"""
         if request.method == 'POST':
             username = request.form.get('username')
             password = request.form.get('password')
@@ -145,17 +147,19 @@ def init_heyreach_routes(app):
                 session['heyreach_username'] = username
                 return redirect('/heyreach/dashboard')
 
-            return render_template('login.html', error="Identifiants incorrects")
+            return render_template('heyreach_login.html', error="Identifiants incorrects")
 
-        return render_template('login.html')
+        return render_template('heyreach_login.html')
 
     @app.route('/heyreach/dashboard')
     @heyreach_login_required
     def heyreach_dashboard():
-        return render_template('dashboard.html', username=session.get('heyreach_username', 'User'))
+        """HeyReach dashboard"""
+        return render_template('heyreach_dashboard.html', username=session.get('heyreach_username', 'User'))
 
     @app.route('/heyreach/logout')
     def heyreach_logout():
+        """Logout from HeyReach"""
         session.pop('heyreach_logged_in', None)
         session.pop('heyreach_username', None)
         return redirect('/heyreach/login')
@@ -163,6 +167,7 @@ def init_heyreach_routes(app):
     @app.route('/heyreach/api/campaigns', methods=['POST'])
     @heyreach_login_required
     def heyreach_api_campaigns():
+        """Get all campaigns"""
         try:
             data = request.json
             api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
@@ -187,6 +192,7 @@ def init_heyreach_routes(app):
     @app.route('/heyreach/api/stats', methods=['POST'])
     @heyreach_login_required
     def heyreach_api_stats():
+        """Get overall stats"""
         try:
             data = request.json
             api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
@@ -221,6 +227,7 @@ def init_heyreach_routes(app):
     @app.route('/heyreach/api/download', methods=['POST'])
     @heyreach_login_required
     def heyreach_api_download():
+        """Download conversations as CSV"""
         try:
             data = request.json
             api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
