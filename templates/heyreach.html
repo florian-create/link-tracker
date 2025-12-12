@@ -708,22 +708,6 @@
             </div>
         </div>
 
-        <!-- Reporting Section -->
-        <div id="reporting-section" class="section" style="display: none;">
-            <div class="export-card">
-                <h3 class="section-title" style="margin-bottom: 0.5rem;">🔥 Hot Leads Report</h3>
-                <p style="color: #888; font-size: 0.875rem; margin-bottom: 1.5rem;">Generate PNG report with AI-detected hot leads</p>
-
-                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                    <button type="button" onclick="analyzeHotLeads()" class="btn btn-primary">
-                        Analyze Hot Leads
-                    </button>
-                </div>
-
-                <div id="hot-leads-results" style="margin-top: 1rem;"></div>
-            </div>
-        </div>
-
         <!-- Loading -->
         <div id="loading" class="loading" style="display: none;">
             <div class="spinner"></div>
@@ -752,7 +736,6 @@
         const SUCCESS = document.getElementById('success');
         const STATS_SECTION = document.getElementById('stats-section');
         const EXPORT_SECTION = document.getElementById('export-section');
-        const REPORTING_SECTION = document.getElementById('reporting-section');
         const STATS_CONTENT = document.getElementById('stats-content');
         const TIME_FILTER_CONTAINER = document.getElementById('time-filter-container');
         const CUSTOM_DATES_INLINE = document.getElementById('custom-dates-inline');
@@ -761,7 +744,6 @@
         let campaignsLoaded = false;
         let timeRangeMode = 'all';
         let currentWorkspace = null;
-        let currentHotLeads = [];
 
         // ===== WORKSPACE MANAGEMENT =====
 
@@ -793,7 +775,6 @@
             if (!workspaceId) {
                 STATS_SECTION.style.display = 'none';
                 EXPORT_SECTION.style.display = 'none';
-                REPORTING_SECTION.style.display = 'none';
                 TIME_FILTER_CONTAINER.style.display = 'none';
                 currentWorkspace = null;
                 return;
@@ -807,7 +788,6 @@
                 API_KEY_INPUT.value = workspace.apiKey;
                 STATS_SECTION.style.display = 'block';
                 EXPORT_SECTION.style.display = 'block';
-                REPORTING_SECTION.style.display = 'block';
                 TIME_FILTER_CONTAINER.style.display = 'flex';
 
                 // Clear previous data
@@ -1191,136 +1171,6 @@
                 hideLoading();
                 showSuccess('Export téléchargé avec succès !');
 
-            } catch (error) {
-                showError(error.message);
-            }
-        }
-
-        // ===== HOT LEADS REPORTING =====
-
-        async function analyzeHotLeads() {
-            if (!currentWorkspace) {
-                showError('Sélectionnez un workspace');
-                return;
-            }
-            showLoading();
-            try {
-                const selectedOptions = Array.from(CAMPAIGN_SELECTOR.selectedOptions);
-                const campaign_ids = selectedOptions.map(option => parseInt(option.value));
-
-                const formData = {
-                    api_key: API_KEY_INPUT.value.trim(),
-                    campaign_ids: campaign_ids
-                };
-
-                if (timeRangeMode === 'custom') {
-                    formData.date_from = document.getElementById('date_from').value;
-                    formData.date_to = document.getElementById('date_to').value;
-                }
-
-                const response = await fetch('/heyreach/api/analyze-hot-leads', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'Erreur');
-                }
-
-                const analysis = await response.json();
-                currentHotLeads = analysis.hot_leads;
-                displayHotLeads(analysis);
-                hideLoading();
-            } catch (error) {
-                showError(error.message);
-            }
-        }
-
-        function displayHotLeads(analysis) {
-            const resultsDiv = document.getElementById('hot-leads-results');
-
-            if (analysis.hot_count === 0) {
-                resultsDiv.innerHTML = '<p style="color: #888;">Aucun lead chaud détecté</p>';
-                return;
-            }
-
-            let html = `<div style="margin-bottom: 1rem; color: #4ade80;">
-                Found ${analysis.hot_count} hot leads (${analysis.total_analyzed} analyzed)
-            </div>`;
-
-            analysis.hot_leads.forEach(lead => {
-                html += `
-                    <div style="background: #111; border: 1px solid #222; padding: 1rem; margin-bottom: 0.5rem; border-radius: 4px;">
-                        <div style="font-weight: 600; color: #fff;">${lead.name}</div>
-                        <div style="font-size: 0.875rem; color: #888;">${lead.company || ''} • ${lead.campaign}</div>
-                        <div style="margin-top: 0.5rem; color: #4ade80; font-style: italic;">"${lead.message_extract}"</div>
-                    </div>
-                `;
-            });
-
-            html += `<button type="button" onclick="generateReport()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: #fff; color: #000; border: none; border-radius: 3px; font-weight: 600; cursor: pointer;">Generate PNG Report</button>`;
-
-            resultsDiv.innerHTML = html;
-        }
-
-        async function generateReport() {
-            showLoading();
-            try {
-                const selectedOptions = Array.from(CAMPAIGN_SELECTOR.selectedOptions);
-                const campaign_ids = selectedOptions.map(option => parseInt(option.value));
-
-                let startDate, endDate, timePeriod = 'All time';
-                if (timeRangeMode === 'custom') {
-                    const dateFrom = document.getElementById('date_from').value;
-                    const dateTo = document.getElementById('date_to').value;
-                    startDate = new Date(dateFrom + 'T00:00:00.000Z').toISOString();
-                    endDate = new Date(dateTo + 'T23:59:59.999Z').toISOString();
-                    timePeriod = `${dateFrom} to ${dateTo}`;
-                } else {
-                    endDate = new Date().toISOString();
-                    const start = new Date();
-                    if (timeRangeMode === '7d') {
-                        start.setDate(start.getDate() - 7);
-                        timePeriod = 'Last 7 days';
-                    } else if (timeRangeMode === '30d') {
-                        start.setDate(start.getDate() - 30);
-                        timePeriod = 'Last 30 days';
-                    }
-                    startDate = start.toISOString();
-                }
-
-                const response = await fetch('/heyreach/api/generate-report', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        api_key: API_KEY_INPUT.value.trim(),
-                        campaign_ids: campaign_ids,
-                        start_date: startDate,
-                        end_date: endDate,
-                        time_period: timePeriod,
-                        hot_leads: currentHotLeads
-                    })
-                });
-
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'Erreur');
-                }
-
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `heyreach_report_${new Date().getTime()}.png`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-
-                hideLoading();
-                showSuccess('Report downloaded!');
             } catch (error) {
                 showError(error.message);
             }

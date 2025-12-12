@@ -126,6 +126,31 @@ def init_heyreach_routes(app):
 
             return {"campaigns": all_campaigns, "totalCount": len(all_campaigns)}
 
+        def get_conversation_messages(self, conversation_id):
+            """Get all messages from a specific conversation"""
+            url = f"{self.base_url}/inbox/GetMessages"
+            body = {
+                "conversationId": conversation_id,
+                "offset": 0,
+                "limit": 100
+            }
+
+            try:
+                response = requests.post(url, headers=self.headers, json=body)
+                if response.status_code != 200:
+                    return []
+
+                result = response.json()
+                messages = result.get("items", [])
+
+                # Trier les messages par date (ordre chronologique)
+                messages.sort(key=lambda x: x.get('sentAt', ''))
+
+                return messages
+            except Exception as e:
+                print(f"Error fetching messages for conversation {conversation_id}: {e}")
+                return []
+
     # ===== ROUTES =====
 
     @app.route('/heyreach')
@@ -193,7 +218,7 @@ def init_heyreach_routes(app):
 
     @app.route('/heyreach/api/download', methods=['POST'])
     def heyreach_api_download():
-        """Download conversations as CSV"""
+        """Download conversations as CSV with full message history (30 columns)"""
         try:
             data = request.json
             api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
@@ -223,27 +248,44 @@ def init_heyreach_routes(app):
             output = io.StringIO()
             writer = csv.writer(output)
 
-            writer.writerow([
+            # Header with 30 message columns
+            header = [
                 'Campaign ID', 'Campaign Name', 'Lead Name', 'Profile URL',
-                'Last Message', 'Last Message Date', 'Total Messages',
-                'Conversation ID', 'LinkedIn Sender'
-            ])
+                'Total Messages', 'Conversation ID', 'LinkedIn Sender'
+            ]
+            # Add Message_1 to Message_30 columns
+            for i in range(1, 31):
+                header.append(f'Message_{i}')
 
+            writer.writerow(header)
+
+            # Write data
             for conv in conversations:
                 profile = conv.get('correspondentProfile', {})
                 lead_name = f"{profile.get('firstName', '')} {profile.get('lastName', '')}".strip()
+                conversation_id = conv.get('conversationId', '')
 
-                writer.writerow([
+                # Get all messages for this conversation
+                messages = api.get_conversation_messages(conversation_id)
+                message_texts = [msg.get('text', '') for msg in messages[:30]]  # Limit to 30 messages
+
+                # Pad with empty strings if less than 30 messages
+                while len(message_texts) < 30:
+                    message_texts.append('')
+
+                row = [
                     conv.get('campaignId', ''),
                     conv.get('campaignName', ''),
                     lead_name or 'N/A',
                     profile.get('profileUrl', ''),
-                    conv.get('lastMessageText', ''),
-                    conv.get('lastMessageAt', ''),
                     conv.get('totalMessages', 0),
-                    conv.get('conversationId', ''),
+                    conversation_id,
                     conv.get('linkedInSenderName', '')
-                ])
+                ]
+                # Add all 30 message columns
+                row.extend(message_texts)
+
+                writer.writerow(row)
 
             output.seek(0)
             return send_file(
@@ -256,119 +298,3 @@ def init_heyreach_routes(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-    @app.route('/heyreach/api/analyze-hot-leads', methods=['POST'])
-    def heyreach_api_analyze_hot_leads():
-        """Analyze conversations and return hot leads with AI categorization"""
-        try:
-            # Vérifier si le reporting est disponible
-            if not REPORTING_AVAILABLE:
-                return jsonify({
-                    'error': 'Fonctionnalité de reporting non disponible. Installez les dépendances: pip install Pillow anthropic',
-                    'hot_leads': [],
-                    'total_analyzed': 0,
-                    'hot_count': 0
-                }), 200
-
-            # Import avec gestion d'erreur
-            try:
-                from heyreach_reporting import analyze_conversations
-            except ImportError as e:
-                return jsonify({
-                    'error': f'Module heyreach_reporting non disponible: {str(e)}',
-                    'hot_leads': [],
-                    'total_analyzed': 0,
-                    'hot_count': 0
-                }), 200
-
-            data = request.json
-            api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
-
-            if not api_key:
-                return jsonify({'error': 'Clé API requise'}), 400
-
-            campaign_ids = data.get('campaign_ids', [])
-            if isinstance(campaign_ids, str):
-                campaign_ids = [int(x.strip()) for x in campaign_ids.split(',') if x.strip().isdigit()]
-            elif isinstance(campaign_ids, list):
-                campaign_ids = [int(x) for x in campaign_ids if str(x).strip().isdigit()]
-
-            filter_campaign_ids = campaign_ids if campaign_ids and len(campaign_ids) > 0 else None
-
-            date_from = data.get('date_from')
-            date_to = data.get('date_to')
-
-            api = HeyReachAPI(api_key)
-            conversations = api.get_all_conversations(
-                campaign_ids=filter_campaign_ids,
-                date_from=date_from,
-                date_to=date_to
-            )
-
-            # Analyser avec l'IA
-            analysis = analyze_conversations(conversations)
-
-            return jsonify(analysis)
-
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-
-    @app.route('/heyreach/api/generate-report', methods=['POST'])
-    def heyreach_api_generate_report():
-        """Generate PNG report with stats and hot leads"""
-        try:
-            # Vérifier si le reporting est disponible
-            if not REPORTING_AVAILABLE:
-                return jsonify({
-                    'error': 'Fonctionnalité de reporting non disponible. Installez les dépendances: pip install Pillow anthropic'
-                }), 400
-
-            try:
-                from heyreach_reporting import generate_report_image
-            except ImportError as e:
-                return jsonify({
-                    'error': f'Module heyreach_reporting non disponible: {str(e)}'
-                }), 400
-
-            data = request.json
-            api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
-
-            if not api_key:
-                return jsonify({'error': 'Clé API requise'}), 400
-
-            # Get stats
-            campaign_ids = data.get('campaign_ids', [])
-            start_date = data.get('start_date')
-            end_date = data.get('end_date')
-            time_period = data.get('time_period', 'All time')
-
-            # Get stats from HeyReach
-            url = "https://api.heyreach.io/api/public/stats/GetOverallStats"
-            headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
-            body = {
-                "accountIds": [],
-                "campaignIds": campaign_ids if campaign_ids else [],
-                "startDate": start_date,
-                "endDate": end_date
-            }
-
-            stats_response = requests.post(url, headers=headers, json=body)
-            if stats_response.status_code != 200:
-                return jsonify({'error': 'Erreur lors de la récupération des stats'}), 500
-
-            stats = stats_response.json()
-
-            # Get hot leads from request
-            hot_leads = data.get('hot_leads', [])
-
-            # Generate image
-            img_buffer = generate_report_image(stats, hot_leads, time_period)
-
-            return send_file(
-                img_buffer,
-                mimetype='image/png',
-                as_attachment=True,
-                download_name=f'heyreach_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png'
-            )
-
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
