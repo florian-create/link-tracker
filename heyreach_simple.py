@@ -10,9 +10,15 @@ import csv
 from datetime import datetime
 import os
 import json
-import base64
-from PIL import Image, ImageDraw, ImageFont
-import google.generativeai as genai
+
+# Optional imports for reporting features
+try:
+    from PIL import Image, ImageDraw, ImageFont
+    import google.generativeai as genai
+    REPORTING_AVAILABLE = True
+except ImportError:
+    REPORTING_AVAILABLE = False
+    print("Warning: PIL or google-generativeai not available. Reporting features disabled.")
 
 def init_heyreach_routes(app):
     """Initialize HeyReach routes in the main app"""
@@ -254,7 +260,25 @@ def init_heyreach_routes(app):
     def heyreach_api_analyze_hot_leads():
         """Analyze conversations and return hot leads with AI categorization"""
         try:
-            from heyreach_reporting import analyze_conversations
+            # Vérifier si le reporting est disponible
+            if not REPORTING_AVAILABLE:
+                return jsonify({
+                    'error': 'Fonctionnalité de reporting non disponible. Installez les dépendances: pip install Pillow google-generativeai',
+                    'hot_leads': [],
+                    'total_analyzed': 0,
+                    'hot_count': 0
+                }), 200
+
+            # Import avec gestion d'erreur
+            try:
+                from heyreach_reporting import analyze_conversations
+            except ImportError as e:
+                return jsonify({
+                    'error': f'Module heyreach_reporting non disponible: {str(e)}',
+                    'hot_leads': [],
+                    'total_analyzed': 0,
+                    'hot_count': 0
+                }), 200
 
             data = request.json
             api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
@@ -292,7 +316,18 @@ def init_heyreach_routes(app):
     def heyreach_api_generate_report():
         """Generate PNG report with stats and hot leads"""
         try:
-            from heyreach_reporting import generate_report_image
+            # Vérifier si le reporting est disponible
+            if not REPORTING_AVAILABLE:
+                return jsonify({
+                    'error': 'Fonctionnalité de reporting non disponible. Installez les dépendances: pip install Pillow google-generativeai'
+                }), 400
+
+            try:
+                from heyreach_reporting import generate_report_image
+            except ImportError as e:
+                return jsonify({
+                    'error': f'Module heyreach_reporting non disponible: {str(e)}'
+                }), 400
 
             data = request.json
             api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')

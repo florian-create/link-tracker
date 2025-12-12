@@ -3,16 +3,29 @@ HeyReach Reporting Module
 Génération de rapports PNG avec catégorisation IA des leads chauds
 """
 
-import google.generativeai as genai
-from PIL import Image, ImageDraw, ImageFont
 import io
 import json
 import os
 from datetime import datetime
 
+# Optional imports for AI and image generation
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError:
+    GENAI_AVAILABLE = False
+    genai = None
+
+try:
+    from PIL import Image, ImageDraw, ImageFont
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+    Image = ImageDraw = ImageFont = None
+
 # Configuration Gemini
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and GENAI_AVAILABLE:
     genai.configure(api_key=GEMINI_API_KEY)
 
 def categorize_lead(conversation, last_message_text):
@@ -30,6 +43,14 @@ def categorize_lead(conversation, last_message_text):
         - key_phrase: L'extrait le plus marquant du message
         - reason: Raison de la catégorisation
     """
+    if not GENAI_AVAILABLE:
+        return {
+            "category": "unknown",
+            "confidence": 0,
+            "key_phrase": last_message_text[:100] if last_message_text else "",
+            "reason": "google-generativeai not installed"
+        }
+
     if not GEMINI_API_KEY or not last_message_text:
         return {
             "category": "unknown",
@@ -131,6 +152,9 @@ def generate_report_image(stats, hot_leads, time_period="All time"):
     Returns:
         BytesIO contenant l'image PNG
     """
+    if not PIL_AVAILABLE:
+        raise ImportError("Pillow is required for image generation. Install with: pip install Pillow")
+
     # Dimensions de l'image
     width = 1200
     header_height = 200
