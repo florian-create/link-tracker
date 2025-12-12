@@ -241,9 +241,6 @@ def init_heyreach_routes(app):
             date_from = data.get('date_from')
             date_to = data.get('date_to')
 
-            # NEW: Quick mode - skip fetching individual messages
-            quick_mode = data.get('quick_mode', False)
-
             api = HeyReachAPI(api_key)
 
             # Get all campaigns to create a mapping campaignId -> campaignName
@@ -309,7 +306,7 @@ def init_heyreach_routes(app):
             ])
             writer.writerow([])  # Empty row
 
-            # Header with all useful lead info
+            # Header with all useful lead info and 30 message columns
             header = [
                 'Lead Name',
                 'Company',
@@ -318,17 +315,14 @@ def init_heyreach_routes(app):
                 'Profile URL',
                 'Campaign',
                 'LinkedIn Account',
+                'First Message Date',
                 'Last Message Date',
                 'Total Messages',
-                'Last Message',
                 'Tags'
             ]
-
-            # In full mode, add 30 message columns
-            if not quick_mode:
-                header.insert(7, 'First Message Date')  # Add after LinkedIn Account
-                for i in range(1, 31):
-                    header.append(f'Message_{i}')
+            # Add Message_1 to Message_30 columns
+            for i in range(1, 31):
+                header.append(f'Message_{i}')
 
             writer.writerow(header)
 
@@ -351,68 +345,52 @@ def init_heyreach_routes(app):
                 campaign_id = conv.get('campaignId')
                 campaign_name = campaign_mapping.get(campaign_id, f"Campaign {campaign_id}")
 
+                # Get all messages for this conversation using GetChatroom
+                try:
+                    messages = api.get_conversation_with_messages(account_id, conversation_id)
+                    # Small delay to avoid rate limiting
+                    time.sleep(0.02)
+                except Exception as e:
+                    print(f"Error fetching messages for conversation {conversation_id}: {e}")
+                    messages = []
+
+                # Get first and last message dates
+                first_message_date = messages[0].get('createdAt', '') if messages else ''
+                last_message_date = messages[-1].get('createdAt', '') if messages else conv.get('lastMessageAt', '')
+
                 # Get tags as comma-separated string
                 tags = ', '.join(profile.get('tags', []))
 
-                if quick_mode:
-                    # QUICK MODE: Use only data from conversation object (no additional API calls)
-                    last_message_date = conv.get('lastMessageAt', '')
-                    last_message_text = conv.get('lastMessageText', '')
+                # Extract message text from 'body' field and format with sender
+                message_texts = []
+                for msg in messages[:30]:  # Limit to 30 messages
+                    sender = msg.get('sender', 'UNKNOWN')
+                    # Replace any sender that's not ME with LEAD
+                    sender_label = 'ME' if sender == 'ME' else 'LEAD'
+                    body = msg.get('body', '')
+                    # Format: [SENDER] message
+                    message_text = f"[{sender_label}] {body}" if body else ""
+                    message_texts.append(message_text)
 
-                    row = [
-                        lead_name or 'N/A',
-                        profile.get('companyName', ''),
-                        profile.get('position', '') or profile.get('headline', ''),
-                        profile.get('location', ''),
-                        profile.get('profileUrl', ''),
-                        campaign_name,
-                        linkedin_account_name or linkedin_account.get('emailAddress', ''),
-                        last_message_date,
-                        conv.get('totalMessages', 0),
-                        last_message_text or '',
-                        tags
-                    ]
-                else:
-                    # FULL MODE: Fetch all messages for each conversation
-                    try:
-                        messages = api.get_conversation_with_messages(account_id, conversation_id)
-                        time.sleep(0.02)
-                    except Exception as e:
-                        print(f"Error fetching messages for conversation {conversation_id}: {e}")
-                        messages = []
+                # Pad with empty strings if less than 30 messages
+                while len(message_texts) < 30:
+                    message_texts.append('')
 
-                    # Get first and last message dates
-                    first_message_date = messages[0].get('createdAt', '') if messages else ''
-                    last_message_date = messages[-1].get('createdAt', '') if messages else conv.get('lastMessageAt', '')
-
-                    # Extract message text from 'body' field and format with sender
-                    message_texts = []
-                    for msg in messages[:30]:  # Limit to 30 messages
-                        sender = msg.get('sender', 'UNKNOWN')
-                        sender_label = 'ME' if sender == 'ME' else 'LEAD'
-                        body = msg.get('body', '')
-                        message_text = f"[{sender_label}] {body}" if body else ""
-                        message_texts.append(message_text)
-
-                    # Pad with empty strings if less than 30 messages
-                    while len(message_texts) < 30:
-                        message_texts.append('')
-
-                    row = [
-                        lead_name or 'N/A',
-                        profile.get('companyName', ''),
-                        profile.get('position', '') or profile.get('headline', ''),
-                        profile.get('location', ''),
-                        profile.get('profileUrl', ''),
-                        campaign_name,
-                        linkedin_account_name or linkedin_account.get('emailAddress', ''),
-                        first_message_date,
-                        last_message_date,
-                        conv.get('totalMessages', 0),
-                        tags
-                    ]
-                    # Add all 30 message columns
-                    row.extend(message_texts)
+                row = [
+                    lead_name or 'N/A',
+                    profile.get('companyName', ''),
+                    profile.get('position', '') or profile.get('headline', ''),
+                    profile.get('location', ''),
+                    profile.get('profileUrl', ''),
+                    campaign_name,
+                    linkedin_account_name or linkedin_account.get('emailAddress', ''),
+                    first_message_date,
+                    last_message_date,
+                    conv.get('totalMessages', 0),
+                    tags
+                ]
+                # Add all 30 message columns
+                row.extend(message_texts)
 
                 writer.writerow(row)
 

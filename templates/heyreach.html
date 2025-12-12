@@ -705,16 +705,10 @@
                         ></select>
                     </div>
 
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; align-self: flex-end;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #ccc; cursor: pointer;">
-                            <input type="checkbox" id="quick_mode" checked style="cursor: pointer;">
-                            <span>Mode rapide (sans historique complet des messages)</span>
-                        </label>
-                        <button type="button" onclick="downloadCSV()" class="btn btn-primary btn-with-icon">
-                            <img src="https://img.icons8.com/?size=100&id=i0CWL3PLBTln&format=png&color=FFFFFF" alt="Google Sheets" style="width: 20px; height: 20px; margin-right: 0.5rem;">
-                            Télécharger CSV
-                        </button>
-                    </div>
+                    <button type="button" onclick="downloadCSV()" class="btn btn-primary btn-with-icon" style="align-self: flex-end;">
+                        <img src="https://img.icons8.com/?size=100&id=i0CWL3PLBTln&format=png&color=FFFFFF" alt="Google Sheets" style="width: 20px; height: 20px; margin-right: 0.5rem;">
+                        Télécharger CSV
+                    </button>
                 </div>
             </div>
         </div>
@@ -1164,8 +1158,7 @@
             const data = {
                 api_key: API_KEY_INPUT.value.trim(),
                 campaign_ids: campaign_ids,
-                workspace_name: currentWorkspace ? currentWorkspace.name : 'export',
-                quick_mode: document.getElementById('quick_mode').checked
+                workspace_name: currentWorkspace ? currentWorkspace.name : 'export'
             };
 
             // Add date range if custom
