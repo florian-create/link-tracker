@@ -128,20 +128,25 @@ def init_heyreach_routes(app):
 
         def get_conversation_messages(self, conversation_id):
             """Get all messages from a specific conversation"""
-            url = f"{self.base_url}/inbox/GetMessages"
+            url = f"{self.base_url}/inbox/GetConversation"
             body = {
-                "conversationId": conversation_id,
-                "offset": 0,
-                "limit": 100
+                "conversationId": conversation_id
             }
 
             try:
                 response = requests.post(url, headers=self.headers, json=body)
                 if response.status_code != 200:
+                    print(f"API Error for conversation {conversation_id}: {response.status_code}")
                     return []
 
                 result = response.json()
-                messages = result.get("items", [])
+
+                # L'endpoint GetConversation retourne la conversation avec ses messages
+                messages = result.get("messages", [])
+
+                if not messages:
+                    print(f"No messages found for conversation {conversation_id}")
+                    return []
 
                 # Trier les messages par date (ordre chronologique)
                 messages.sort(key=lambda x: x.get('sentAt', ''))
@@ -222,6 +227,7 @@ def init_heyreach_routes(app):
         try:
             data = request.json
             api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
+            workspace_name = data.get('workspace_name', 'export')
 
             if not api_key:
                 return jsonify({'error': 'Clé API requise'}), 400
@@ -248,11 +254,8 @@ def init_heyreach_routes(app):
             output = io.StringIO()
             writer = csv.writer(output)
 
-            # Header with 30 message columns
-            header = [
-                'Campaign ID', 'Campaign Name', 'Lead Name', 'Profile URL',
-                'Total Messages', 'Conversation ID', 'LinkedIn Sender'
-            ]
+            # Header with 30 message columns (removed Campaign ID, Campaign Name, Conversation ID, LinkedIn Sender)
+            header = ['Lead Name', 'Profile URL', 'Total Messages']
             # Add Message_1 to Message_30 columns
             for i in range(1, 31):
                 header.append(f'Message_{i}')
@@ -274,13 +277,9 @@ def init_heyreach_routes(app):
                     message_texts.append('')
 
                 row = [
-                    conv.get('campaignId', ''),
-                    conv.get('campaignName', ''),
                     lead_name or 'N/A',
                     profile.get('profileUrl', ''),
-                    conv.get('totalMessages', 0),
-                    conversation_id,
-                    conv.get('linkedInSenderName', '')
+                    conv.get('totalMessages', 0)
                 ]
                 # Add all 30 message columns
                 row.extend(message_texts)
@@ -288,11 +287,16 @@ def init_heyreach_routes(app):
                 writer.writerow(row)
 
             output.seek(0)
+
+            # Generate filename with workspace name and exact time
+            now = datetime.now()
+            filename = f"{workspace_name}_{now.strftime('%Y%m%d_%H%M%S')}.csv"
+
             return send_file(
                 io.BytesIO(output.getvalue().encode('utf-8')),
                 mimetype='text/csv',
                 as_attachment=True,
-                download_name=f'heyreach_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+                download_name=filename
             )
 
         except Exception as e:

@@ -1036,7 +1036,8 @@
 
             const data = {
                 api_key: API_KEY_INPUT.value.trim(),
-                campaign_ids: campaign_ids
+                campaign_ids: campaign_ids,
+                workspace_name: currentWorkspace ? currentWorkspace.name : 'export'
             };
 
             // Add date range if custom
@@ -1151,16 +1152,15 @@
                 const a = document.createElement('a');
                 a.href = url;
 
-                // Better filename with date range if applicable
-                let filename = 'heyreach_export';
-                if (timeRangeMode === 'custom') {
-                    const dateFrom = document.getElementById('date_from').value;
-                    const dateTo = document.getElementById('date_to').value;
-                    filename += `_${dateFrom}_to_${dateTo}`;
-                } else {
-                    filename += '_all_time';
+                // Get filename from Content-Disposition header or use default
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'export.csv';
+                if (contentDisposition) {
+                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+                    if (matches != null && matches[1]) {
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
                 }
-                filename += `_${new Date().getTime()}.csv`;
 
                 a.download = filename;
                 document.body.appendChild(a);
