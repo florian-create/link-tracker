@@ -967,80 +967,78 @@
         function displayStats(data) {
             const overall = data.overallStats;
 
-            // Données pour l'entonnoir
+            // Données pour les barres
             const connectionsSent = overall.connectionsSent || 0;
             const connectionsAccepted = overall.connectionsAccepted || 0;
             const messagesSent = overall.messagesSent || 0;
             const repliesReceived = overall.totalMessageReplies || 0;
 
             // Calcul des pourcentages (base: connexions envoyées = 100%)
-            const pctAccepted = connectionsSent > 0 ? (connectionsAccepted / connectionsSent * 100).toFixed(1) : 0;
-            const pctMessages = connectionsSent > 0 ? (messagesSent / connectionsSent * 100).toFixed(1) : 0;
-            const pctReplies = connectionsSent > 0 ? (repliesReceived / connectionsSent * 100).toFixed(1) : 0;
+            const pctAccepted = connectionsSent > 0 ? (connectionsAccepted / connectionsSent * 100) : 0;
+            const pctMessages = connectionsSent > 0 ? (messagesSent / connectionsSent * 100) : 0;
+            const pctReplies = connectionsSent > 0 ? (repliesReceived / connectionsSent * 100) : 0;
+
+            // Function to get color based on intensity (Link Tracker style)
+            function getBarColor(intensity) {
+                if (intensity >= 0.888) return 'rgba(200, 76, 60, 0.9)';
+                if (intensity >= 0.777) return 'rgba(229, 90, 58, 0.85)';
+                if (intensity >= 0.666) return 'rgba(245, 120, 66, 0.85)';
+                if (intensity >= 0.555) return 'rgba(248, 149, 84, 0.8)';
+                if (intensity >= 0.444) return 'rgba(250, 165, 102, 0.8)';
+                if (intensity >= 0.333) return 'rgba(252, 184, 120, 0.75)';
+                if (intensity >= 0.222) return 'rgba(253, 203, 138, 0.75)';
+                if (intensity >= 0.111) return 'rgba(254, 221, 156, 0.7)';
+                return 'rgba(255, 240, 174, 0.7)';
+            }
+
+            const stages = [
+                { label: 'Connexions envoyées', value: connectionsSent, pct: 100, intensity: 1.0 },
+                { label: 'Connexions acceptées', value: connectionsAccepted, pct: pctAccepted, intensity: pctAccepted / 100 },
+                { label: 'Messages envoyés', value: messagesSent, pct: pctMessages, intensity: pctMessages / 100 },
+                { label: 'Réponses reçues', value: repliesReceived, pct: pctReplies, intensity: pctReplies / 100 }
+            ];
 
             const html = `
-                <div style="max-width: 800px; margin: 0 auto;">
-                    <svg viewBox="0 0 800 600" style="width: 100%; height: auto;">
+                <div style="max-width: 900px; margin: 0 auto; padding: 2rem;">
+                    <svg viewBox="0 0 900 400" style="width: 100%; height: auto;">
                         <!-- Grid background -->
                         <defs>
                             <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
                                 <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#222" stroke-width="0.5"/>
                             </pattern>
                         </defs>
-                        <rect width="800" height="600" fill="url(#grid)" opacity="0.3"/>
+                        <rect width="900" height="400" fill="url(#grid)" opacity="0.3"/>
 
-                        <!-- Funnel stages -->
-                        <!-- Stage 1: Connexions envoyées -->
-                        <path d="M 150 100 L 650 100 L 630 200 L 170 200 Z"
-                              fill="#1a1a1a" stroke="#444" stroke-width="2"/>
-                        <text x="400" y="140" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">
-                            Connexions envoyées
-                        </text>
-                        <text x="400" y="170" text-anchor="middle" fill="#4ade80" font-size="32" font-weight="700">
-                            ${connectionsSent}
-                        </text>
+                        ${stages.map((stage, i) => {
+                            const y = 40 + i * 90;
+                            const maxBarWidth = 650;
+                            const barWidth = (stage.pct / 100) * maxBarWidth;
+                            const color = getBarColor(stage.intensity);
 
-                        <!-- Percentage label 1 -->
-                        <text x="680" y="150" fill="#888" font-size="14">100%</text>
+                            return `
+                                <!-- Stage ${i + 1}: ${stage.label} -->
+                                <!-- Label -->
+                                <text x="20" y="${y + 15}" fill="#ccc" font-size="14" font-weight="500">
+                                    ${stage.label}
+                                </text>
 
-                        <!-- Stage 2: Connexions acceptées -->
-                        <path d="M 170 200 L 630 200 L 600 300 L 200 300 Z"
-                              fill="#1a1a1a" stroke="#444" stroke-width="2"/>
-                        <text x="400" y="240" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">
-                            Connexions acceptées
-                        </text>
-                        <text x="400" y="270" text-anchor="middle" fill="#4ade80" font-size="32" font-weight="700">
-                            ${connectionsAccepted}
-                        </text>
+                                <!-- Bar -->
+                                <rect x="20" y="${y + 25}" width="${barWidth}" height="40"
+                                      fill="${color}" stroke="#444" stroke-width="1" rx="2"/>
 
-                        <!-- Percentage label 2 -->
-                        <text x="680" y="250" fill="#888" font-size="14">${pctAccepted}%</text>
+                                <!-- Value inside bar -->
+                                <text x="${Math.max(30, barWidth / 2 + 20)}" y="${y + 52}"
+                                      fill="#000" font-size="18" font-weight="700" text-anchor="middle">
+                                    ${stage.value}
+                                </text>
 
-                        <!-- Stage 3: Messages envoyés -->
-                        <path d="M 200 300 L 600 300 L 560 400 L 240 400 Z"
-                              fill="#1a1a1a" stroke="#444" stroke-width="2"/>
-                        <text x="400" y="340" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">
-                            Messages envoyés
-                        </text>
-                        <text x="400" y="370" text-anchor="middle" fill="#4ade80" font-size="32" font-weight="700">
-                            ${messagesSent}
-                        </text>
-
-                        <!-- Percentage label 3 -->
-                        <text x="680" y="350" fill="#888" font-size="14">${pctMessages}%</text>
-
-                        <!-- Stage 4: Réponses reçues -->
-                        <path d="M 240 400 L 560 400 L 520 500 L 280 500 Z"
-                              fill="#1a1a1a" stroke="#444" stroke-width="2"/>
-                        <text x="400" y="440" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">
-                            Réponses reçues
-                        </text>
-                        <text x="400" y="470" text-anchor="middle" fill="#4ade80" font-size="32" font-weight="700">
-                            ${repliesReceived}
-                        </text>
-
-                        <!-- Percentage label 4 -->
-                        <text x="680" y="450" fill="#888" font-size="14">${pctReplies}%</text>
+                                <!-- Percentage -->
+                                <text x="${maxBarWidth + 40}" y="${y + 52}"
+                                      fill="#888" font-size="14" font-weight="500">
+                                    ${stage.pct.toFixed(1)}%
+                                </text>
+                            `;
+                        }).join('')}
                     </svg>
                 </div>
             `;

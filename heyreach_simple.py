@@ -254,7 +254,6 @@ def init_heyreach_routes(app):
             # Header with all useful lead info and 30 message columns
             header = [
                 'Lead Name',
-                'Email',
                 'Company',
                 'Position',
                 'Location',
@@ -317,7 +316,6 @@ def init_heyreach_routes(app):
 
                 row = [
                     lead_name or 'N/A',
-                    profile.get('emailAddress', ''),
                     profile.get('companyName', ''),
                     profile.get('position', '') or profile.get('headline', ''),
                     profile.get('location', ''),
