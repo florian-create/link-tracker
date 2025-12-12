@@ -4,6 +4,12 @@ Sets timeout to 30 minutes to handle large exports
 """
 
 import os
+import sys
+
+# Print immediately to verify file is loaded
+print("=" * 80, file=sys.stderr, flush=True)
+print("🔧 LOADING GUNICORN CONFIG FILE", file=sys.stderr, flush=True)
+print("=" * 80, file=sys.stderr, flush=True)
 
 # Server socket - use PORT from environment (Render requirement)
 port = os.environ.get("PORT", "10000")
