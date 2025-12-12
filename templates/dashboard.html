@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - HeyReach Exporter{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- Workspace form modal (hidden by default) -->
+    <div id="workspace-form-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem; font-size: 1rem;">Nouveau Workspace</h3>
+            <div class="form-group">
+                <label for="workspace_name">Nom</label>
+                <input
+                    type="text"
+                    id="workspace_name"
+                    placeholder="Ex: Aura, Wesser..."
+                    class="form-control"
+                >
+            </div>
+            <div class="form-group">
+                <label for="workspace_api_key">Clé API HeyReach</label>
+                <input
+                    type="password"
+                    id="workspace_api_key"
+                    placeholder="sk_live_..."
+                    class="form-control"
+                >
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" onclick="saveWorkspace()" class="btn btn-primary" style="flex: 1;">Enregistrer</button>
+                <button type="button" onclick="closeWorkspaceModal()" class="btn btn-secondary">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compact controls bar -->
+    <div class="controls-bar">
+        <div class="workspace-controls">
+            <label>Workspace</label>
+            <div style="display: flex; gap: 0.5rem;">
+                <select id="workspace_selector" class="compact-select" onchange="selectWorkspace()">
+                    <option value="">Sélectionner...</option>
+                </select>
+                <button type="button" onclick="showNewWorkspaceModal()" class="btn-icon" title="Nouveau workspace">+</button>
+                <button type="button" onclick="deleteWorkspace()" class="btn-icon btn-danger" title="Supprimer">×</button>
+            </div>
+        </div>
+
+        <div id="time-filter-container" class="time-filter-container" style="display: none;">
+            <div class="time-filter">
+                <button type="button" onclick="setTimeRange('all')" class="time-btn active" id="btn-all">All time</button>
+                <button type="button" onclick="setTimeRange('7d')" class="time-btn" id="btn-7d">7 jours</button>
+                <button type="button" onclick="setTimeRange('30d')" class="time-btn" id="btn-30d">30 jours</button>
+                <button type="button" onclick="setTimeRange('custom')" class="time-btn" id="btn-custom">Personnalisé</button>
+            </div>
+        </div>
+
+        <div id="custom-dates-inline" style="display: none; gap: 0.5rem;">
+            <input type="date" id="date_from" class="compact-date">
+            <span style="color: #666;">→</span>
+            <input type="date" id="date_to" class="compact-date">
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div id="stats-section" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 class="section-title">Statistiques</h3>
+            <button type="button" onclick="loadStats()" class="btn btn-sm btn-primary">Actualiser</button>
+        </div>
+        <div id="stats-content"></div>
+    </div>
+
+    <!-- Export Section -->
+    <div id="export-section" style="display: none;">
+        <div class="export-card">
+            <input type="hidden" id="api_key" name="api_key">
+
+            <div class="export-row">
+                <div style="flex: 1;">
+                    <label class="compact-label">Campagnes</label>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button type="button" onclick="loadCampaigns()" class="btn btn-sm btn-primary">Charger</button>
+                        <span id="campaigns-status" style="color: #666; font-size: 0.875rem;"></span>
+                    </div>
+                    <select
+                        id="campaign_selector"
+                        class="form-control"
+                        multiple
+                        size="6"
+                        style="display: none; margin-top: 0.5rem;"
+                    ></select>
+                </div>
+
+                <button type="button" onclick="downloadCSV()" class="btn btn-primary btn-with-icon" style="align-self: flex-end;">
+                    <img src="https://img.icons8.com/?size=100&id=i0CWL3PLBTln&format=png&color=FFFFFF" alt="Google Sheets" style="width: 20px; height: 20px; margin-right: 0.5rem;">
+                    Télécharger CSV
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Chargement en cours...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="error" class="alert alert-error" style="display: none;"></div>
+
+    <!-- Success -->
+    <div id="success" class="alert alert-success" style="display: none;"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// DOM Elements
+const API_KEY_INPUT = document.getElementById('api_key');
+const WORKSPACE_SELECTOR = document.getElementById('workspace_selector');
+const WORKSPACE_NAME_INPUT = document.getElementById('workspace_name');
+const WORKSPACE_API_KEY_INPUT = document.getElementById('workspace_api_key');
+const WORKSPACE_FORM_MODAL = document.getElementById('workspace-form-modal');
+const CAMPAIGN_SELECTOR = document.getElementById('campaign_selector');
+const CAMPAIGNS_STATUS = document.getElementById('campaigns-status');
+const LOADING = document.getElementById('loading');
+const ERROR = document.getElementById('error');
+const SUCCESS = document.getElementById('success');
+const STATS_SECTION = document.getElementById('stats-section');
+const EXPORT_SECTION = document.getElementById('export-section');
+const STATS_CONTENT = document.getElementById('stats-content');
+const TIME_FILTER_CONTAINER = document.getElementById('time-filter-container');
+const CUSTOM_DATES_INLINE = document.getElementById('custom-dates-inline');
+
+// State
+let campaignsLoaded = false;
+let timeRangeMode = 'all';
+let currentWorkspace = null;
+
+// ===== WORKSPACE MANAGEMENT =====
+
+function loadWorkspaces() {
+    const workspaces = JSON.parse(localStorage.getItem('heyreach_workspaces') || '[]');
+    WORKSPACE_SELECTOR.innerHTML = '<option value="">Sélectionner...</option>';
+
+    workspaces.forEach(ws => {
+        const option = document.createElement('option');
+        option.value = ws.id;
+        option.textContent = ws.name;
+        WORKSPACE_SELECTOR.appendChild(option);
+    });
+}
+
+function showNewWorkspaceModal() {
+    WORKSPACE_NAME_INPUT.value = '';
+    WORKSPACE_API_KEY_INPUT.value = '';
+    WORKSPACE_FORM_MODAL.style.display = 'flex';
+}
+
+function closeWorkspaceModal() {
+    WORKSPACE_FORM_MODAL.style.display = 'none';
+}
+
+function selectWorkspace() {
+    const workspaceId = WORKSPACE_SELECTOR.value;
+
+    if (!workspaceId) {
+        STATS_SECTION.style.display = 'none';
+        EXPORT_SECTION.style.display = 'none';
+        TIME_FILTER_CONTAINER.style.display = 'none';
+        currentWorkspace = null;
+        return;
+    }
+
+    const workspaces = JSON.parse(localStorage.getItem('heyreach_workspaces') || '[]');
+    const workspace = workspaces.find(ws => ws.id === workspaceId);
+
+    if (workspace) {
+        currentWorkspace = workspace;
+        API_KEY_INPUT.value = workspace.apiKey;
+        STATS_SECTION.style.display = 'block';
+        EXPORT_SECTION.style.display = 'block';
+        TIME_FILTER_CONTAINER.style.display = 'flex';
+
+        // Clear previous data
+        CAMPAIGN_SELECTOR.style.display = 'none';
+        CAMPAIGNS_STATUS.innerHTML = '';
+        STATS_CONTENT.innerHTML = '';
+        campaignsLoaded = false;
+
+        // Auto-load campaigns
+        loadCampaigns();
+    }
+}
+
+function saveWorkspace() {
+    const name = WORKSPACE_NAME_INPUT.value.trim();
+    const apiKey = WORKSPACE_API_KEY_INPUT.value.trim();
+
+    if (!name || !apiKey) {
+        showError('Veuillez remplir le nom et la clé API');
+        return;
+    }
+
+    const workspaces = JSON.parse(localStorage.getItem('heyreach_workspaces') || '[]');
+    const newWorkspace = {
+        id: Date.now().toString(),
+        name: name,
+        apiKey: apiKey
+    };
+
+    workspaces.push(newWorkspace);
+    localStorage.setItem('heyreach_workspaces', JSON.stringify(workspaces));
+
+    loadWorkspaces();
+    WORKSPACE_SELECTOR.value = newWorkspace.id;
+    closeWorkspaceModal();
+    selectWorkspace();
+
+    showSuccess(`Workspace "${name}" enregistré`);
+}
+
+function deleteWorkspace() {
+    const workspaceId = WORKSPACE_SELECTOR.value;
+
+    if (!workspaceId) {
+        showError('Sélectionnez un workspace à supprimer');
+        return;
+    }
+
+    if (!confirm('Supprimer ce workspace ?')) {
+        return;
+    }
+
+    const workspaces = JSON.parse(localStorage.getItem('heyreach_workspaces') || '[]');
+    const filtered = workspaces.filter(ws => ws.id !== workspaceId);
+    localStorage.setItem('heyreach_workspaces', JSON.stringify(filtered));
+
+    loadWorkspaces();
+    WORKSPACE_SELECTOR.value = '';
+    selectWorkspace();
+
+    showSuccess('Workspace supprimé');
+}
+
+// Initialize workspaces on page load
+loadWorkspaces();
+
+// Show modal if no workspaces exist
+const workspaces = JSON.parse(localStorage.getItem('heyreach_workspaces') || '[]');
+if (workspaces.length === 0) {
+    showNewWorkspaceModal();
+}
+
+function showLoading() {
+    LOADING.style.display = 'block';
+    ERROR.style.display = 'none';
+    SUCCESS.style.display = 'none';
+}
+
+function hideLoading() {
+    LOADING.style.display = 'none';
+}
+
+function showError(message) {
+    ERROR.textContent = message;
+    ERROR.style.display = 'block';
+    SUCCESS.style.display = 'none';
+    hideLoading();
+}
+
+function showSuccess(message) {
+    SUCCESS.textContent = message;
+    SUCCESS.style.display = 'block';
+    ERROR.style.display = 'none';
+    hideLoading();
+
+    setTimeout(() => {
+        SUCCESS.style.display = 'none';
+    }, 5000);
+}
+
+// ===== STATS =====
+
+async function loadStats() {
+    if (!currentWorkspace) {
+        showError('Veuillez sélectionner un workspace');
+        return;
+    }
+
+    // Get date range
+    let startDate, endDate;
+
+    if (timeRangeMode === 'custom') {
+        const dateFrom = document.getElementById('date_from').value;
+        const dateTo = document.getElementById('date_to').value;
+
+        if (!dateFrom || !dateTo) {
+            showError('Veuillez sélectionner une période');
+            return;
+        }
+
+        // Convert to ISO 8601 format with time
+        startDate = new Date(dateFrom + 'T00:00:00.000Z').toISOString();
+        endDate = new Date(dateTo + 'T23:59:59.999Z').toISOString();
+    } else {
+        // Calculate date range based on mode
+        endDate = new Date().toISOString();
+        const start = new Date();
+
+        if (timeRangeMode === '7d') {
+            start.setDate(start.getDate() - 7);
+        } else if (timeRangeMode === '30d') {
+            start.setDate(start.getDate() - 30);
+        } else {
+            // 'all' - last 30 days by default
+            start.setDate(start.getDate() - 30);
+        }
+
+        startDate = start.toISOString();
+    }
+
+    showLoading();
+
+    try {
+        // Get selected campaign IDs
+        const selectedOptions = Array.from(CAMPAIGN_SELECTOR.selectedOptions);
+        const campaignIds = selectedOptions.map(option => parseInt(option.value));
+
+        const response = await fetch('/api/stats', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                api_key: currentWorkspace.apiKey,
+                campaign_ids: campaignIds,
+                start_date: startDate,
+                end_date: endDate
+            })
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Erreur lors du chargement des stats');
+        }
+
+        const stats = await response.json();
+        displayStats(stats);
+        hideLoading();
+
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+function displayStats(data) {
+    const overall = data.overallStats;
+
+    const html = `
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Messages envoyés</div>
+                <div class="stat-value">${overall.messagesSent || 0}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Conversations démarrées</div>
+                <div class="stat-value">${overall.totalMessageStarted || 0}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Réponses reçues</div>
+                <div class="stat-value">${overall.totalMessageReplies || 0}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Taux de réponse</div>
+                <div class="stat-value">${(overall.messageReplyRate * 100).toFixed(1)}%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Connexions envoyées</div>
+                <div class="stat-value">${overall.connectionsSent || 0}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Connexions acceptées</div>
+                <div class="stat-value">${overall.connectionsAccepted || 0}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Taux d'acceptation</div>
+                <div class="stat-value">${(overall.connectionAcceptanceRate * 100).toFixed(1)}%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Vues de profil</div>
+                <div class="stat-value">${overall.profileViews || 0}</div>
+            </div>
+        </div>
+    `;
+
+    STATS_CONTENT.innerHTML = html;
+}
+
+// ===== TIME RANGE =====
+
+function setTimeRange(mode) {
+    timeRangeMode = mode;
+
+    // Update button states
+    document.getElementById('btn-all').classList.toggle('active', mode === 'all');
+    document.getElementById('btn-7d').classList.toggle('active', mode === '7d');
+    document.getElementById('btn-30d').classList.toggle('active', mode === '30d');
+    document.getElementById('btn-custom').classList.toggle('active', mode === 'custom');
+
+    // Show/hide custom dates
+    CUSTOM_DATES_INLINE.style.display = mode === 'custom' ? 'flex' : 'none';
+
+    // Auto-reload stats if workspace selected
+    if (currentWorkspace && mode !== 'custom') {
+        loadStats();
+    }
+}
+
+function getFormData() {
+    // Get selected campaign IDs from the selector
+    const selectedOptions = Array.from(CAMPAIGN_SELECTOR.selectedOptions);
+    const campaign_ids = selectedOptions.map(option => parseInt(option.value));
+
+    const data = {
+        api_key: API_KEY_INPUT.value.trim(),
+        campaign_ids: campaign_ids
+    };
+
+    // Add date range if custom
+    if (timeRangeMode === 'custom') {
+        const dateFrom = document.getElementById('date_from').value;
+        const dateTo = document.getElementById('date_to').value;
+
+        if (dateFrom) data.date_from = dateFrom;
+        if (dateTo) data.date_to = dateTo;
+    }
+
+    return data;
+}
+
+async function loadCampaigns() {
+    const apiKey = API_KEY_INPUT.value.trim();
+
+    if (!apiKey) {
+        showError('Veuillez entrer votre clé API d\'abord');
+        return;
+    }
+
+    CAMPAIGNS_STATUS.innerHTML = '⏳ Chargement...';
+    CAMPAIGN_SELECTOR.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/campaigns', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ api_key: apiKey })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Erreur lors du chargement des campagnes');
+        }
+
+        // Populate the selector
+        CAMPAIGN_SELECTOR.innerHTML = '';
+
+        if (data.campaigns && data.campaigns.length > 0) {
+            data.campaigns.forEach(campaign => {
+                const option = document.createElement('option');
+                option.value = campaign.id;
+                option.textContent = campaign.name;
+                CAMPAIGN_SELECTOR.appendChild(option);
+            });
+
+            CAMPAIGN_SELECTOR.style.display = 'block';
+            CAMPAIGNS_STATUS.innerHTML = `${data.campaigns.length} campagne(s) chargée(s)`;
+            campaignsLoaded = true;
+
+            // Add listener to reload stats when campaigns selection changes
+            CAMPAIGN_SELECTOR.onchange = () => {
+                if (currentWorkspace) {
+                    loadStats();
+                }
+            };
+
+            // Auto-load stats for all campaigns
+            loadStats();
+        } else {
+            CAMPAIGNS_STATUS.innerHTML = 'Aucune campagne trouvée';
+        }
+
+    } catch (error) {
+        CAMPAIGNS_STATUS.innerHTML = error.message;
+        console.error('Error loading campaigns:', error);
+    }
+}
+
+async function downloadCSV() {
+    showLoading();
+
+    try {
+        const formData = getFormData();
+
+        // Validate custom date range
+        if (timeRangeMode === 'custom') {
+            const dateFrom = document.getElementById('date_from').value;
+            const dateTo = document.getElementById('date_to').value;
+
+            if (!dateFrom || !dateTo) {
+                throw new Error('Veuillez sélectionner une date de début et une date de fin');
+            }
+
+            if (new Date(dateFrom) > new Date(dateTo)) {
+                throw new Error('La date de début doit être antérieure à la date de fin');
+            }
+        }
+
+        const response = await fetch('/api/download', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Erreur lors du téléchargement');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        // Better filename with date range if applicable
+        let filename = 'heyreach_export';
+        if (timeRangeMode === 'custom') {
+            const dateFrom = document.getElementById('date_from').value;
+            const dateTo = document.getElementById('date_to').value;
+            filename += `_${dateFrom}_to_${dateTo}`;
+        } else {
+            filename += '_all_time';
+        }
+        filename += `_${new Date().getTime()}.csv`;
+
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        hideLoading();
+        showSuccess('Export téléchargé avec succès !');
+
+    } catch (error) {
+        showError(error.message);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,284 @@
+"""
+HeyReach Exporter - Integrated into Link Tracker
+Toutes les fonctionnalités HeyReach avec préfixe /heyreach
+"""
+
+from flask import render_template, request, jsonify, send_file, session, redirect, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
+from functools import wraps
+import requests
+import io
+import csv
+from datetime import datetime
+import os
+
+# Configuration
+HEYREACH_USERS = {
+    'olivier@aura.camp': 'aura742446@',
+    'florian@aura.camp': 'aura742446@'
+}
+
+def heyreach_login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('heyreach_logged_in'):
+            return redirect(url_for('heyreach_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def init_heyreach_routes(app):
+    """Initialize HeyReach routes in the main app"""
+
+    # HeyReach API Client
+    class HeyReachAPI:
+        def __init__(self, api_key):
+            self.api_key = api_key
+            self.base_url = "https://api.heyreach.io/api/public"
+            self.headers = {
+                "X-API-KEY": api_key,
+                "Content-Type": "application/json"
+            }
+
+        def get_conversations(self, campaign_ids=None, linkedin_account_ids=None, date_from=None, date_to=None, offset=0, limit=100):
+            url = f"{self.base_url}/inbox/GetConversationsV2"
+            body = {
+                "offset": offset,
+                "limit": limit
+            }
+            if campaign_ids:
+                body["campaignIds"] = campaign_ids
+            if linkedin_account_ids:
+                body["linkedInAccountIds"] = linkedin_account_ids
+
+            response = requests.post(url, headers=self.headers, json=body)
+            if response.status_code != 200:
+                raise Exception(f"API Error: {response.text}")
+
+            return response.json()
+
+        def get_all_conversations(self, campaign_ids=None, linkedin_account_ids=None, date_from=None, date_to=None):
+            all_conversations = []
+            offset = 0
+            limit = 100
+            max_iterations = 1000
+
+            for iteration in range(max_iterations):
+                result = self.get_conversations(campaign_ids, linkedin_account_ids, date_from, date_to, offset, limit)
+                conversations = result.get("items", [])
+                total_count = result.get("totalCount", 0)
+
+                if not conversations:
+                    break
+
+                all_conversations.extend(conversations)
+
+                if len(all_conversations) >= total_count or len(conversations) < limit:
+                    break
+
+                offset += limit
+
+            # Filter by date if specified
+            if date_from or date_to:
+                filtered_conversations = []
+                for conv in all_conversations:
+                    last_msg_date = conv.get('lastMessageAt')
+                    if not last_msg_date:
+                        continue
+
+                    msg_date = datetime.fromisoformat(last_msg_date.replace('Z', '+00:00')).date()
+
+                    if date_from:
+                        from_date = datetime.fromisoformat(date_from).date()
+                        if msg_date < from_date:
+                            continue
+
+                    if date_to:
+                        to_date = datetime.fromisoformat(date_to).date()
+                        if msg_date > to_date:
+                            continue
+
+                    filtered_conversations.append(conv)
+
+                return filtered_conversations
+
+            return all_conversations
+
+        def get_campaigns(self):
+            url = f"{self.base_url}/campaign/GetAll"
+            all_campaigns = []
+            offset = 0
+            limit = 100
+
+            while True:
+                body = {"offset": offset, "limit": limit}
+                response = requests.post(url, headers=self.headers, json=body)
+
+                if response.status_code != 200:
+                    return None
+
+                result = response.json()
+                campaigns = result.get("items", [])
+                total_count = result.get("totalCount", 0)
+
+                if not campaigns:
+                    break
+
+                all_campaigns.extend(campaigns)
+
+                if len(all_campaigns) >= total_count or len(campaigns) < limit:
+                    break
+
+                offset += limit
+
+            return {"campaigns": all_campaigns, "totalCount": len(all_campaigns)}
+
+    # Routes
+    @app.route('/heyreach')
+    @app.route('/heyreach/login', methods=['GET', 'POST'])
+    def heyreach_login():
+        if request.method == 'POST':
+            username = request.form.get('username')
+            password = request.form.get('password')
+
+            if username in HEYREACH_USERS and HEYREACH_USERS[username] == password:
+                session['heyreach_logged_in'] = True
+                session['heyreach_username'] = username
+                return redirect(url_for('heyreach_dashboard'))
+
+            return render_template('login.html', error="Identifiants incorrects")
+
+        return render_template('login.html')
+
+    @app.route('/heyreach/dashboard')
+    @heyreach_login_required
+    def heyreach_dashboard():
+        return render_template('dashboard.html', username=session.get('heyreach_username', 'User'))
+
+    @app.route('/heyreach/logout')
+    def heyreach_logout():
+        session.pop('heyreach_logged_in', None)
+        session.pop('heyreach_username', None)
+        return redirect(url_for('heyreach_login'))
+
+    @app.route('/heyreach/api/campaigns', methods=['POST'])
+    @heyreach_login_required
+    def heyreach_api_campaigns():
+        try:
+            data = request.json
+            api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
+
+            if not api_key:
+                return jsonify({'error': 'Clé API requise'}), 400
+
+            api = HeyReachAPI(api_key)
+            result = api.get_campaigns()
+
+            if not result:
+                return jsonify({'error': 'Impossible de récupérer les campagnes'}), 404
+
+            campaigns = result.get('campaigns', [])
+            campaigns.sort(key=lambda x: str(x.get('name', '')).lower())
+
+            return jsonify({'success': True, 'campaigns': campaigns})
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/heyreach/api/stats', methods=['POST'])
+    @heyreach_login_required
+    def heyreach_api_stats():
+        try:
+            data = request.json
+            api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
+
+            if not api_key:
+                return jsonify({'error': 'Clé API requise'}), 400
+
+            campaign_ids = data.get('campaign_ids', [])
+            account_ids = data.get('account_ids', [])
+            start_date = data.get('start_date')
+            end_date = data.get('end_date')
+
+            url = "https://api.heyreach.io/api/public/stats/GetOverallStats"
+            headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
+            body = {
+                "accountIds": account_ids if account_ids else [],
+                "campaignIds": campaign_ids if campaign_ids else [],
+                "startDate": start_date,
+                "endDate": end_date
+            }
+
+            response = requests.post(url, headers=headers, json=body)
+
+            if response.status_code != 200:
+                return jsonify({'error': 'Erreur lors de la récupération des stats'}), response.status_code
+
+            return jsonify(response.json())
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/heyreach/api/download', methods=['POST'])
+    @heyreach_login_required
+    def heyreach_api_download():
+        try:
+            data = request.json
+            api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
+
+            if not api_key:
+                return jsonify({'error': 'Clé API requise'}), 400
+
+            campaign_ids = data.get('campaign_ids', [])
+            if isinstance(campaign_ids, str):
+                campaign_ids = [int(x.strip()) for x in campaign_ids.split(',') if x.strip().isdigit()]
+            elif isinstance(campaign_ids, list):
+                campaign_ids = [int(x) for x in campaign_ids if str(x).strip().isdigit()]
+
+            filter_campaign_ids = campaign_ids if campaign_ids and len(campaign_ids) > 0 else None
+
+            date_from = data.get('date_from')
+            date_to = data.get('date_to')
+
+            api = HeyReachAPI(api_key)
+            conversations = api.get_all_conversations(
+                campaign_ids=filter_campaign_ids,
+                date_from=date_from,
+                date_to=date_to
+            )
+
+            # Create CSV
+            output = io.StringIO()
+            writer = csv.writer(output)
+
+            writer.writerow([
+                'Campaign ID', 'Campaign Name', 'Lead Name', 'Profile URL',
+                'Last Message', 'Last Message Date', 'Total Messages',
+                'Conversation ID', 'LinkedIn Sender'
+            ])
+
+            for conv in conversations:
+                profile = conv.get('correspondentProfile', {})
+                lead_name = f"{profile.get('firstName', '')} {profile.get('lastName', '')}".strip()
+
+                writer.writerow([
+                    conv.get('campaignId', ''),
+                    conv.get('campaignName', ''),
+                    lead_name or 'N/A',
+                    profile.get('profileUrl', ''),
+                    conv.get('lastMessageText', ''),
+                    conv.get('lastMessageAt', ''),
+                    conv.get('totalMessages', 0),
+                    conv.get('conversationId', ''),
+                    conv.get('linkedInSenderName', '')
+                ])
+
+            output.seek(0)
+            return send_file(
+                io.BytesIO(output.getvalue().encode('utf-8')),
+                mimetype='text/csv',
+                as_attachment=True,
+                download_name=f'heyreach_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+            )
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500

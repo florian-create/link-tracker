@@ -1577,6 +1577,17 @@ DASHBOARD_HTML = '''
 </html>
 '''
 
+# ===== HEYREACH EXPORTER INTEGRATION =====
+from heyreach_app import init_heyreach_routes
+init_heyreach_routes(app)
+
+# Redirect /tracker to main dashboard
+@app.route('/tracker')
+@login_required
+def tracker_dashboard():
+    """Redirect to main link tracker dashboard"""
+    return redirect('/')
+
 if __name__ == '__main__':
     # Initialize database on first run
     try:

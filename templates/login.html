@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion - HeyReach Exporter{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <h2>HEYREACH EXPORTER</h2>
+            <p>Connexion au tableau de bord</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}" class="login-form">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Votre nom"
+                    required
+                    class="form-control"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="••••••••"
+                    required
+                    class="form-control"
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                Se connecter
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <p class="text-muted">HeyReach Exporter © 2025</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

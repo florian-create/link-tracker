@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HeyReach Exporter{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% if session.get('user') or session.get('logged_in') %}
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">TOOLS</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/tracker" class="sidebar-link {% if request.path.startswith('/tracker') or request.path == '/' %}active{% endif %}">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6.5 9.5L9.5 6.5M8.5 4.5H11.5V7.5M12 8V12.5C12 13.0523 11.5523 13.5 11 13.5H4C3.44772 13.5 3 13.0523 3 12.5V5.5C3 4.94772 3.44772 4.5 4 4.5H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Link Tracker</span>
+            </a>
+            <a href="/heyreach" class="sidebar-link {% if request.path.startswith('/heyreach') %}active{% endif %}">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 8L8 2L14 8M3 7V13.5C3 13.7761 3.22386 14 3.5 14H6.5V10.5C6.5 10.2239 6.72386 10 7 10H9C9.27614 10 9.5 10.2239 9.5 10.5V14H12.5C12.7761 14 13 13.7761 13 13.5V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>HeyReach Export</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('heyreach_logout') if request.path.startswith('/heyreach') else url_for('logout') }}" class="sidebar-link">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 14H3.5C3.22386 14 3 13.7761 3 13.5V2.5C3 2.22386 3.22386 2 3.5 2H6M11 11L14 8M14 8L11 5M14 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Déconnexion</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <main class="container-centered">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% else %}
+    <!-- Login page without sidebar -->
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    {% endif %}
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
