@@ -1249,6 +1249,17 @@
         async function downloadCSV() {
             showLoading();
 
+            // Show message for potentially long exports
+            const loadingMsg = document.querySelector('.loading');
+            if (loadingMsg) {
+                const msgDiv = document.createElement('div');
+                msgDiv.style.marginTop = '1rem';
+                msgDiv.style.color = '#888';
+                msgDiv.style.fontSize = '0.875rem';
+                msgDiv.innerHTML = 'Les exports volumineux peuvent prendre plusieurs minutes...<br>Merci de patienter.';
+                loadingMsg.appendChild(msgDiv);
+            }
+
             try {
                 const formData = getFormData();
 

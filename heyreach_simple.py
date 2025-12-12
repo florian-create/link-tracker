@@ -259,16 +259,12 @@ def init_heyreach_routes(app):
             total_conversations = len(conversations)
             print(f"Total conversations to export: {total_conversations}")
 
-            # Return error if export is too large (likely to timeout)
-            if total_conversations > 1000:
-                return jsonify({
-                    'error': f'Export trop volumineux ({total_conversations} conversations). Veuillez réduire la période ou sélectionner moins de campagnes. Maximum recommandé: 1000 conversations.'
-                }), 400
-
-            # Warn if export is large
-            if total_conversations > 500:
-                print(f"WARNING: Large export ({total_conversations} conversations). This may take several minutes.")
-                print(f"Estimated time: ~{total_conversations * 0.2:.0f} seconds")
+            # Log estimate for large exports
+            if total_conversations > 100:
+                estimated_time = total_conversations * 0.2
+                print(f"Estimated export time: ~{estimated_time:.0f} seconds ({estimated_time/60:.1f} minutes)")
+                if total_conversations > 1000:
+                    print(f"LARGE EXPORT: {total_conversations} conversations - this will take a while!")
 
             # Get stats for the header row
             start_date = None
