@@ -138,18 +138,22 @@ def init_heyreach_routes(app):
     @app.route('/heyreach/login', methods=['GET', 'POST'])
     def heyreach_login():
         """Login page for HeyReach"""
-        if request.method == 'POST':
-            username = request.form.get('username')
-            password = request.form.get('password')
+        try:
+            if request.method == 'POST':
+                username = request.form.get('username')
+                password = request.form.get('password')
 
-            if username in HEYREACH_USERS and HEYREACH_USERS[username] == password:
-                session['heyreach_logged_in'] = True
-                session['heyreach_username'] = username
-                return redirect('/heyreach/dashboard')
+                if username in HEYREACH_USERS and HEYREACH_USERS[username] == password:
+                    session['heyreach_logged_in'] = True
+                    session['heyreach_username'] = username
+                    return redirect('/heyreach/dashboard')
 
-            return render_template('heyreach_login.html', error="Identifiants incorrects")
+                return render_template('heyreach_login.html', error="Identifiants incorrects")
 
-        return render_template('heyreach_login.html')
+            return render_template('heyreach_login.html')
+        except Exception as e:
+            # Debug mode - return error details
+            return f"<h1>Error in heyreach_login</h1><pre>{str(e)}</pre><pre>{type(e).__name__}</pre>", 500
 
     @app.route('/heyreach/dashboard')
     @heyreach_login_required
