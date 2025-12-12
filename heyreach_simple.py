@@ -10,6 +10,7 @@ import csv
 from datetime import datetime
 import os
 import json
+import time
 
 # Optional imports for reporting features
 try:
@@ -316,7 +317,11 @@ def init_heyreach_routes(app):
             writer.writerow(header)
 
             # Write data
-            for conv in conversations:
+            total_convs = len(conversations)
+            for idx, conv in enumerate(conversations):
+                if idx % 50 == 0:
+                    print(f"Processing conversation {idx+1}/{total_convs}...")
+
                 profile = conv.get('correspondentProfile', {})
                 lead_name = f"{profile.get('firstName', '')} {profile.get('lastName', '')}".strip()
                 conversation_id = conv.get('id', '')
@@ -331,7 +336,13 @@ def init_heyreach_routes(app):
                 campaign_name = campaign_mapping.get(campaign_id, f"Campaign {campaign_id}")
 
                 # Get all messages for this conversation using GetChatroom
-                messages = api.get_conversation_with_messages(account_id, conversation_id)
+                try:
+                    messages = api.get_conversation_with_messages(account_id, conversation_id)
+                    # Small delay to avoid rate limiting (100ms)
+                    time.sleep(0.1)
+                except Exception as e:
+                    print(f"Error fetching messages for conversation {conversation_id}: {e}")
+                    messages = []
 
                 # Get first and last message dates
                 first_message_date = messages[0].get('createdAt', '') if messages else ''

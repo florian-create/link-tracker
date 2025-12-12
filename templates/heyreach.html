@@ -956,8 +956,16 @@
                 });
 
                 if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'Erreur lors du chargement des stats');
+                    let errorMessage = 'Erreur lors du chargement des stats';
+                    try {
+                        const data = await response.json();
+                        errorMessage = data.error || errorMessage;
+                    } catch (e) {
+                        if (response.status >= 500) {
+                            errorMessage = 'Erreur serveur';
+                        }
+                    }
+                    throw new Error(errorMessage);
                 }
 
                 const stats = await response.json();
@@ -1183,11 +1191,20 @@
                     body: JSON.stringify({ api_key: apiKey })
                 });
 
-                const data = await response.json();
-
                 if (!response.ok) {
-                    throw new Error(data.error || 'Erreur lors du chargement des campagnes');
+                    let errorMessage = 'Erreur lors du chargement des campagnes';
+                    try {
+                        const data = await response.json();
+                        errorMessage = data.error || errorMessage;
+                    } catch (e) {
+                        if (response.status >= 500) {
+                            errorMessage = 'Erreur serveur';
+                        }
+                    }
+                    throw new Error(errorMessage);
                 }
+
+                const data = await response.json();
 
                 // Populate the selector
                 CAMPAIGN_SELECTOR.innerHTML = '';
@@ -1254,8 +1271,20 @@
                 });
 
                 if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'Erreur lors du téléchargement');
+                    let errorMessage = 'Erreur lors du téléchargement';
+                    try {
+                        const data = await response.json();
+                        errorMessage = data.error || errorMessage;
+                    } catch (e) {
+                        // If we can't parse JSON, it's probably an HTML error page
+                        const text = await response.text();
+                        if (text.includes('timeout') || text.includes('Timeout')) {
+                            errorMessage = 'Le téléchargement a pris trop de temps. Essayez avec moins de conversations ou une période plus courte.';
+                        } else if (response.status >= 500) {
+                            errorMessage = 'Erreur serveur. L\'export est peut-être trop volumineux.';
+                        }
+                    }
+                    throw new Error(errorMessage);
                 }
 
                 const blob = await response.blob();
