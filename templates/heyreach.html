@@ -978,17 +978,18 @@
             const pctMessages = connectionsSent > 0 ? (messagesSent / connectionsSent * 100) : 0;
             const pctReplies = connectionsSent > 0 ? (repliesReceived / connectionsSent * 100) : 0;
 
-            // Function to get color based on intensity (Link Tracker style)
+            // Function to get color - INVERTED: Yellow (100%) → Red (low %)
             function getBarColor(intensity) {
-                if (intensity >= 0.888) return 'rgba(200, 76, 60, 0.9)';
-                if (intensity >= 0.777) return 'rgba(229, 90, 58, 0.85)';
-                if (intensity >= 0.666) return 'rgba(245, 120, 66, 0.85)';
-                if (intensity >= 0.555) return 'rgba(248, 149, 84, 0.8)';
-                if (intensity >= 0.444) return 'rgba(250, 165, 102, 0.8)';
-                if (intensity >= 0.333) return 'rgba(252, 184, 120, 0.75)';
-                if (intensity >= 0.222) return 'rgba(253, 203, 138, 0.75)';
-                if (intensity >= 0.111) return 'rgba(254, 221, 156, 0.7)';
-                return 'rgba(255, 240, 174, 0.7)';
+                // Plus de contraste: jaune très clair → rouge très foncé
+                if (intensity >= 0.888) return 'rgba(255, 253, 150, 1)';      // Jaune très clair (100%)
+                if (intensity >= 0.777) return 'rgba(255, 235, 100, 0.95)';   // Jaune clair
+                if (intensity >= 0.666) return 'rgba(255, 200, 80, 0.9)';     // Jaune-orange
+                if (intensity >= 0.555) return 'rgba(255, 165, 60, 0.9)';     // Orange clair
+                if (intensity >= 0.444) return 'rgba(255, 130, 50, 0.9)';     // Orange
+                if (intensity >= 0.333) return 'rgba(245, 100, 45, 0.95)';    // Orange foncé
+                if (intensity >= 0.222) return 'rgba(230, 70, 40, 0.95)';     // Rouge-orange
+                if (intensity >= 0.111) return 'rgba(200, 50, 35, 1)';        // Rouge foncé
+                return 'rgba(180, 30, 25, 1)';                                 // Rouge très foncé
             }
 
             const stages = [
@@ -1000,41 +1001,43 @@
 
             const html = `
                 <div style="max-width: 900px; margin: 0 auto; padding: 2rem;">
-                    <svg viewBox="0 0 900 400" style="width: 100%; height: auto;">
+                    <svg viewBox="0 0 900 450" style="width: 100%; height: auto;">
                         <!-- Grid background -->
                         <defs>
                             <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
                                 <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#222" stroke-width="0.5"/>
                             </pattern>
                         </defs>
-                        <rect width="900" height="400" fill="url(#grid)" opacity="0.3"/>
+                        <rect width="900" height="450" fill="url(#grid)" opacity="0.3"/>
 
                         ${stages.map((stage, i) => {
-                            const y = 40 + i * 90;
-                            const maxBarWidth = 650;
+                            const y = 50 + i * 100;
+                            const maxBarWidth = 700;
                             const barWidth = (stage.pct / 100) * maxBarWidth;
+                            const centerX = 450; // Centre du SVG
+                            const barX = centerX - (barWidth / 2); // Centrer la barre
                             const color = getBarColor(stage.intensity);
 
                             return `
                                 <!-- Stage ${i + 1}: ${stage.label} -->
-                                <!-- Label -->
-                                <text x="20" y="${y + 15}" fill="#ccc" font-size="14" font-weight="500">
+                                <!-- Label above bar -->
+                                <text x="${centerX}" y="${y}" fill="#ccc" font-size="14" font-weight="500" text-anchor="middle">
                                     ${stage.label}
                                 </text>
 
-                                <!-- Bar -->
-                                <rect x="20" y="${y + 25}" width="${barWidth}" height="40"
-                                      fill="${color}" stroke="#444" stroke-width="1" rx="2"/>
+                                <!-- Funnel bar (centered) -->
+                                <rect x="${barX}" y="${y + 10}" width="${barWidth}" height="50"
+                                      fill="${color}" stroke="#333" stroke-width="1.5" rx="3"/>
 
                                 <!-- Value inside bar -->
-                                <text x="${Math.max(30, barWidth / 2 + 20)}" y="${y + 52}"
-                                      fill="#000" font-size="18" font-weight="700" text-anchor="middle">
+                                <text x="${centerX}" y="${y + 42}"
+                                      fill="#000" font-size="20" font-weight="700" text-anchor="middle">
                                     ${stage.value}
                                 </text>
 
-                                <!-- Percentage -->
-                                <text x="${maxBarWidth + 40}" y="${y + 52}"
-                                      fill="#888" font-size="14" font-weight="500">
+                                <!-- Percentage on right -->
+                                <text x="${centerX + maxBarWidth/2 + 50}" y="${y + 42}"
+                                      fill="#888" font-size="15" font-weight="500">
                                     ${stage.pct.toFixed(1)}%
                                 </text>
                             `;

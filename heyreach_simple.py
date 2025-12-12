@@ -241,15 +241,59 @@ def init_heyreach_routes(app):
             date_to = data.get('date_to')
 
             api = HeyReachAPI(api_key)
+
+            # Get all campaigns to create a mapping campaignId -> campaignName
+            campaigns_data = api.get_campaigns()
+            campaign_mapping = {}
+            if campaigns_data and campaigns_data.get('campaigns'):
+                for camp in campaigns_data['campaigns']:
+                    campaign_mapping[camp.get('id')] = camp.get('name', f"Campaign {camp.get('id')}")
+
             conversations = api.get_all_conversations(
                 campaign_ids=filter_campaign_ids,
                 date_from=date_from,
                 date_to=date_to
             )
 
+            # Get stats for the header row
+            start_date = None
+            end_date = None
+            if date_from and date_to:
+                # Convert YYYY-MM-DD to ISO format
+                start_date = f"{date_from}T00:00:00.000Z"
+                end_date = f"{date_to}T23:59:59.999Z"
+
+            stats_url = "https://api.heyreach.io/api/public/stats/GetOverallStats"
+            headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
+            stats_body = {
+                "accountIds": [],
+                "campaignIds": filter_campaign_ids if filter_campaign_ids else [],
+                "startDate": start_date,
+                "endDate": end_date
+            }
+            try:
+                stats_response = requests.post(stats_url, headers=headers, json=stats_body)
+                if stats_response.status_code == 200:
+                    stats = stats_response.json().get('overallStats', {})
+                else:
+                    stats = {}
+            except:
+                stats = {}
+
             # Create CSV
             output = io.StringIO()
             writer = csv.writer(output)
+
+            # First row: Stats summary
+            connections_sent = stats.get('connectionsSent', 0)
+            connections_accepted = stats.get('connectionsAccepted', 0)
+            messages_sent = stats.get('messagesSent', 0)
+            replies = stats.get('totalMessageReplies', 0)
+
+            writer.writerow([
+                f'STATS: Connexions: {connections_sent} envoyées | {connections_accepted} acceptées | Messages: {messages_sent} envoyés | {replies} réponses'
+            ])
+            writer.writerow([])  # Empty row
 
             # Header with all useful lead info and 30 message columns
             header = [
@@ -282,12 +326,9 @@ def init_heyreach_routes(app):
                 linkedin_account = conv.get('linkedInAccount', {})
                 linkedin_account_name = f"{linkedin_account.get('firstName', '')} {linkedin_account.get('lastName', '')}".strip()
 
-                # Get campaign name - try both fields
-                campaign_name = conv.get('campaignName', '') or f"Campaign {conv.get('campaignId', 'Unknown')}"
-
-                # Debug log for campaign
-                if not conv.get('campaignName'):
-                    print(f"Warning: No campaignName for conversation {conversation_id}, campaignId: {conv.get('campaignId')}")
+                # Get campaign name from mapping
+                campaign_id = conv.get('campaignId')
+                campaign_name = campaign_mapping.get(campaign_id, f"Campaign {campaign_id}")
 
                 # Get all messages for this conversation using GetChatroom
                 messages = api.get_conversation_with_messages(account_id, conversation_id)
