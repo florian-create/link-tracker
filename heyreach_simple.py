@@ -251,8 +251,15 @@ def init_heyreach_routes(app):
             output = io.StringIO()
             writer = csv.writer(output)
 
-            # Header with 30 message columns (removed Campaign ID, Campaign Name, Conversation ID, LinkedIn Sender)
-            header = ['Lead Name', 'Profile URL', 'Total Messages']
+            # Header with campaign, dates, and 30 message columns
+            header = [
+                'Lead Name',
+                'Profile URL',
+                'Campaign',
+                'First Message Date',
+                'Last Message Date',
+                'Total Messages'
+            ]
             # Add Message_1 to Message_30 columns
             for i in range(1, 31):
                 header.append(f'Message_{i}')
@@ -269,13 +276,19 @@ def init_heyreach_routes(app):
                 # Get all messages for this conversation using GetChatroom
                 messages = api.get_conversation_with_messages(account_id, conversation_id)
 
+                # Get first and last message dates
+                first_message_date = messages[0].get('createdAt', '') if messages else ''
+                last_message_date = messages[-1].get('createdAt', '') if messages else conv.get('lastMessageAt', '')
+
                 # Extract message text from 'body' field and format with sender
                 message_texts = []
                 for msg in messages[:30]:  # Limit to 30 messages
                     sender = msg.get('sender', 'UNKNOWN')
+                    # Replace any sender that's not ME with LEAD
+                    sender_label = 'ME' if sender == 'ME' else 'LEAD'
                     body = msg.get('body', '')
                     # Format: [SENDER] message
-                    message_text = f"[{sender}] {body}" if body else ""
+                    message_text = f"[{sender_label}] {body}" if body else ""
                     message_texts.append(message_text)
 
                 # Pad with empty strings if less than 30 messages
@@ -285,6 +298,9 @@ def init_heyreach_routes(app):
                 row = [
                     lead_name or 'N/A',
                     profile.get('profileUrl', ''),
+                    conv.get('campaignName', ''),
+                    first_message_date,
+                    last_message_date,
                     conv.get('totalMessages', 0)
                 ]
                 # Add all 30 message columns
