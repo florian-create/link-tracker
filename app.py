@@ -1578,7 +1578,7 @@ DASHBOARD_HTML = '''
 '''
 
 # ===== HEYREACH EXPORTER INTEGRATION =====
-from heyreach_app import init_heyreach_routes
+from heyreach_simple import init_heyreach_routes
 init_heyreach_routes(app)
 
 # Redirect /tracker to main dashboard
