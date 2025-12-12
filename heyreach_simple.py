@@ -256,6 +256,20 @@ def init_heyreach_routes(app):
                 date_to=date_to
             )
 
+            total_conversations = len(conversations)
+            print(f"Total conversations to export: {total_conversations}")
+
+            # Return error if export is too large (likely to timeout)
+            if total_conversations > 1000:
+                return jsonify({
+                    'error': f'Export trop volumineux ({total_conversations} conversations). Veuillez réduire la période ou sélectionner moins de campagnes. Maximum recommandé: 1000 conversations.'
+                }), 400
+
+            # Warn if export is large
+            if total_conversations > 500:
+                print(f"WARNING: Large export ({total_conversations} conversations). This may take several minutes.")
+                print(f"Estimated time: ~{total_conversations * 0.2:.0f} seconds")
+
             # Get stats for the header row
             start_date = None
             end_date = None
@@ -338,8 +352,8 @@ def init_heyreach_routes(app):
                 # Get all messages for this conversation using GetChatroom
                 try:
                     messages = api.get_conversation_with_messages(account_id, conversation_id)
-                    # Small delay to avoid rate limiting (100ms)
-                    time.sleep(0.1)
+                    # Reduced delay for faster exports (20ms instead of 100ms)
+                    time.sleep(0.02)
                 except Exception as e:
                     print(f"Error fetching messages for conversation {conversation_id}: {e}")
                     messages = []
