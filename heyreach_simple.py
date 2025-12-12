@@ -14,11 +14,11 @@ import json
 # Optional imports for reporting features
 try:
     from PIL import Image, ImageDraw, ImageFont
-    import google.generativeai as genai
+    from anthropic import Anthropic
     REPORTING_AVAILABLE = True
 except ImportError:
     REPORTING_AVAILABLE = False
-    print("Warning: PIL or google-generativeai not available. Reporting features disabled.")
+    print("Warning: PIL or anthropic not available. Reporting features disabled.")
 
 def init_heyreach_routes(app):
     """Initialize HeyReach routes in the main app"""
@@ -263,7 +263,7 @@ def init_heyreach_routes(app):
             # Vérifier si le reporting est disponible
             if not REPORTING_AVAILABLE:
                 return jsonify({
-                    'error': 'Fonctionnalité de reporting non disponible. Installez les dépendances: pip install Pillow google-generativeai',
+                    'error': 'Fonctionnalité de reporting non disponible. Installez les dépendances: pip install Pillow anthropic',
                     'hot_leads': [],
                     'total_analyzed': 0,
                     'hot_count': 0
@@ -319,7 +319,7 @@ def init_heyreach_routes(app):
             # Vérifier si le reporting est disponible
             if not REPORTING_AVAILABLE:
                 return jsonify({
-                    'error': 'Fonctionnalité de reporting non disponible. Installez les dépendances: pip install Pillow google-generativeai'
+                    'error': 'Fonctionnalité de reporting non disponible. Installez les dépendances: pip install Pillow anthropic'
                 }), 400
 
             try:

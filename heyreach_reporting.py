@@ -10,11 +10,11 @@ from datetime import datetime
 
 # Optional imports for AI and image generation
 try:
-    import google.generativeai as genai
-    GENAI_AVAILABLE = True
+    from anthropic import Anthropic
+    ANTHROPIC_AVAILABLE = True
 except ImportError:
-    GENAI_AVAILABLE = False
-    genai = None
+    ANTHROPIC_AVAILABLE = False
+    Anthropic = None
 
 try:
     from PIL import Image, ImageDraw, ImageFont
@@ -23,14 +23,15 @@ except ImportError:
     PIL_AVAILABLE = False
     Image = ImageDraw = ImageFont = None
 
-# Configuration Gemini
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
-if GEMINI_API_KEY and GENAI_AVAILABLE:
-    genai.configure(api_key=GEMINI_API_KEY)
+# Configuration Claude API
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+anthropic_client = None
+if ANTHROPIC_API_KEY and ANTHROPIC_AVAILABLE:
+    anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
 def categorize_lead(conversation, last_message_text):
     """
-    Catégorise un lead comme CHAUD, TIEDE ou FROID avec Gemini Flash
+    Catégorise un lead comme CHAUD, TIEDE ou FROID avec Claude 3.5 Haiku
 
     Args:
         conversation: Dict avec les infos de la conversation
@@ -43,15 +44,15 @@ def categorize_lead(conversation, last_message_text):
         - key_phrase: L'extrait le plus marquant du message
         - reason: Raison de la catégorisation
     """
-    if not GENAI_AVAILABLE:
+    if not ANTHROPIC_AVAILABLE:
         return {
             "category": "unknown",
             "confidence": 0,
             "key_phrase": last_message_text[:100] if last_message_text else "",
-            "reason": "google-generativeai not installed"
+            "reason": "anthropic library not installed"
         }
 
-    if not GEMINI_API_KEY or not last_message_text:
+    if not anthropic_client or not last_message_text:
         return {
             "category": "unknown",
             "confidence": 0,
@@ -60,9 +61,14 @@ def categorize_lead(conversation, last_message_text):
         }
 
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-
-        prompt = f"""Analyse ce message LinkedIn et catégorise le lead:
+        # Utiliser Claude 3.5 Haiku - très rapide et pas cher (~$0.25/MTok)
+        response = anthropic_client.messages.create(
+            model="claude-3-5-haiku-20241022",
+            max_tokens=300,
+            temperature=0,
+            messages=[{
+                "role": "user",
+                "content": f"""Analyse ce message LinkedIn et catégorise le lead:
 
 MESSAGE: "{last_message_text}"
 
@@ -71,16 +77,21 @@ Catégorise ce lead en:
 - WARM (tiède): Intérêt modéré, pose des questions mais pas engagé
 - COLD (froid): Refus poli, pas intéressé, ou réponse vague
 
-Réponds UNIQUEMENT en JSON:
+Réponds UNIQUEMENT en JSON valide:
 {{
     "category": "hot|warm|cold",
     "confidence": 0-100,
     "key_phrase": "l'extrait le plus marquant du message (max 100 chars)",
     "reason": "raison courte de la catégorisation"
 }}"""
+            }]
+        )
 
-        response = model.generate_content(prompt)
-        result = json.loads(response.text.strip())
+        # Extraire le texte de la réponse
+        response_text = response.content[0].text.strip()
+
+        # Parser le JSON
+        result = json.loads(response_text)
 
         return result
 
