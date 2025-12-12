@@ -957,8 +957,10 @@
 
                 if (!response.ok) {
                     let errorMessage = 'Erreur lors du chargement des stats';
+                    const text = await response.text();
+
                     try {
-                        const data = await response.json();
+                        const data = JSON.parse(text);
                         errorMessage = data.error || errorMessage;
                     } catch (e) {
                         if (response.status >= 500) {
@@ -1193,8 +1195,10 @@
 
                 if (!response.ok) {
                     let errorMessage = 'Erreur lors du chargement des campagnes';
+                    const text = await response.text();
+
                     try {
-                        const data = await response.json();
+                        const data = JSON.parse(text);
                         errorMessage = data.error || errorMessage;
                     } catch (e) {
                         if (response.status >= 500) {
@@ -1272,12 +1276,14 @@
 
                 if (!response.ok) {
                     let errorMessage = 'Erreur lors du téléchargement';
+                    const text = await response.text();
+
                     try {
-                        const data = await response.json();
+                        // Try to parse as JSON
+                        const data = JSON.parse(text);
                         errorMessage = data.error || errorMessage;
                     } catch (e) {
                         // If we can't parse JSON, it's probably an HTML error page
-                        const text = await response.text();
                         if (text.includes('timeout') || text.includes('Timeout')) {
                             errorMessage = 'Le téléchargement a pris trop de temps. Essayez avec moins de conversations ou une période plus courte.';
                         } else if (response.status >= 500) {
