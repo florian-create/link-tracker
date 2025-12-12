@@ -126,22 +126,19 @@ def init_heyreach_routes(app):
 
             return {"campaigns": all_campaigns, "totalCount": len(all_campaigns)}
 
-        def get_conversation_messages(self, conversation_id):
-            """Get all messages from a specific conversation"""
-            url = f"{self.base_url}/inbox/GetConversation"
-            body = {
-                "conversationId": conversation_id
-            }
+        def get_conversation_with_messages(self, account_id, conversation_id):
+            """Get a conversation with all its messages using GetChatroom endpoint"""
+            url = f"{self.base_url}/inbox/GetChatroom/{account_id}/{conversation_id}"
 
             try:
-                response = requests.post(url, headers=self.headers, json=body)
+                response = requests.get(url, headers=self.headers)
                 if response.status_code != 200:
-                    print(f"API Error for conversation {conversation_id}: {response.status_code}")
+                    print(f"API Error for conversation {conversation_id}: {response.status_code} - {response.text}")
                     return []
 
                 result = response.json()
 
-                # L'endpoint GetConversation retourne la conversation avec ses messages
+                # L'endpoint GetChatroom retourne la conversation avec ses messages
                 messages = result.get("messages", [])
 
                 if not messages:
@@ -149,7 +146,7 @@ def init_heyreach_routes(app):
                     return []
 
                 # Trier les messages par date (ordre chronologique)
-                messages.sort(key=lambda x: x.get('sentAt', ''))
+                messages.sort(key=lambda x: x.get('createdAt', ''))
 
                 return messages
             except Exception as e:
@@ -266,11 +263,20 @@ def init_heyreach_routes(app):
             for conv in conversations:
                 profile = conv.get('correspondentProfile', {})
                 lead_name = f"{profile.get('firstName', '')} {profile.get('lastName', '')}".strip()
-                conversation_id = conv.get('conversationId', '')
+                conversation_id = conv.get('id', '')
+                account_id = conv.get('linkedInAccountId', '')
 
-                # Get all messages for this conversation
-                messages = api.get_conversation_messages(conversation_id)
-                message_texts = [msg.get('text', '') for msg in messages[:30]]  # Limit to 30 messages
+                # Get all messages for this conversation using GetChatroom
+                messages = api.get_conversation_with_messages(account_id, conversation_id)
+
+                # Extract message text from 'body' field and format with sender
+                message_texts = []
+                for msg in messages[:30]:  # Limit to 30 messages
+                    sender = msg.get('sender', 'UNKNOWN')
+                    body = msg.get('body', '')
+                    # Format: [SENDER] message
+                    message_text = f"[{sender}] {body}" if body else ""
+                    message_texts.append(message_text)
 
                 # Pad with empty strings if less than 30 messages
                 while len(message_texts) < 30:

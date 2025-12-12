@@ -967,40 +967,81 @@
         function displayStats(data) {
             const overall = data.overallStats;
 
+            // Données pour l'entonnoir
+            const connectionsSent = overall.connectionsSent || 0;
+            const connectionsAccepted = overall.connectionsAccepted || 0;
+            const messagesSent = overall.messagesSent || 0;
+            const repliesReceived = overall.totalMessageReplies || 0;
+
+            // Calcul des pourcentages (base: connexions envoyées = 100%)
+            const pctAccepted = connectionsSent > 0 ? (connectionsAccepted / connectionsSent * 100).toFixed(1) : 0;
+            const pctMessages = connectionsSent > 0 ? (messagesSent / connectionsSent * 100).toFixed(1) : 0;
+            const pctReplies = connectionsSent > 0 ? (repliesReceived / connectionsSent * 100).toFixed(1) : 0;
+
             const html = `
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Messages envoyés</div>
-                        <div class="stat-value">${overall.messagesSent || 0}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Conversations démarrées</div>
-                        <div class="stat-value">${overall.totalMessageStarted || 0}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Réponses reçues</div>
-                        <div class="stat-value">${overall.totalMessageReplies || 0}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Taux de réponse</div>
-                        <div class="stat-value">${(overall.messageReplyRate * 100).toFixed(1)}%</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Connexions envoyées</div>
-                        <div class="stat-value">${overall.connectionsSent || 0}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Connexions acceptées</div>
-                        <div class="stat-value">${overall.connectionsAccepted || 0}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Taux d'acceptation</div>
-                        <div class="stat-value">${(overall.connectionAcceptanceRate * 100).toFixed(1)}%</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Vues de profil</div>
-                        <div class="stat-value">${overall.profileViews || 0}</div>
-                    </div>
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <svg viewBox="0 0 800 600" style="width: 100%; height: auto;">
+                        <!-- Grid background -->
+                        <defs>
+                            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#222" stroke-width="0.5"/>
+                            </pattern>
+                        </defs>
+                        <rect width="800" height="600" fill="url(#grid)" opacity="0.3"/>
+
+                        <!-- Funnel stages -->
+                        <!-- Stage 1: Connexions envoyées -->
+                        <path d="M 150 100 L 650 100 L 630 200 L 170 200 Z"
+                              fill="#1a1a1a" stroke="#444" stroke-width="2"/>
+                        <text x="400" y="140" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">
+                            Connexions envoyées
+                        </text>
+                        <text x="400" y="170" text-anchor="middle" fill="#4ade80" font-size="32" font-weight="700">
+                            ${connectionsSent}
+                        </text>
+
+                        <!-- Percentage label 1 -->
+                        <text x="680" y="150" fill="#888" font-size="14">100%</text>
+
+                        <!-- Stage 2: Connexions acceptées -->
+                        <path d="M 170 200 L 630 200 L 600 300 L 200 300 Z"
+                              fill="#1a1a1a" stroke="#444" stroke-width="2"/>
+                        <text x="400" y="240" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">
+                            Connexions acceptées
+                        </text>
+                        <text x="400" y="270" text-anchor="middle" fill="#4ade80" font-size="32" font-weight="700">
+                            ${connectionsAccepted}
+                        </text>
+
+                        <!-- Percentage label 2 -->
+                        <text x="680" y="250" fill="#888" font-size="14">${pctAccepted}%</text>
+
+                        <!-- Stage 3: Messages envoyés -->
+                        <path d="M 200 300 L 600 300 L 560 400 L 240 400 Z"
+                              fill="#1a1a1a" stroke="#444" stroke-width="2"/>
+                        <text x="400" y="340" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">
+                            Messages envoyés
+                        </text>
+                        <text x="400" y="370" text-anchor="middle" fill="#4ade80" font-size="32" font-weight="700">
+                            ${messagesSent}
+                        </text>
+
+                        <!-- Percentage label 3 -->
+                        <text x="680" y="350" fill="#888" font-size="14">${pctMessages}%</text>
+
+                        <!-- Stage 4: Réponses reçues -->
+                        <path d="M 240 400 L 560 400 L 520 500 L 280 500 Z"
+                              fill="#1a1a1a" stroke="#444" stroke-width="2"/>
+                        <text x="400" y="440" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">
+                            Réponses reçues
+                        </text>
+                        <text x="400" y="470" text-anchor="middle" fill="#4ade80" font-size="32" font-weight="700">
+                            ${repliesReceived}
+                        </text>
+
+                        <!-- Percentage label 4 -->
+                        <text x="680" y="450" fill="#888" font-size="14">${pctReplies}%</text>
+                    </svg>
                 </div>
             `;
 
