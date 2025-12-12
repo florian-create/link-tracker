@@ -45,7 +45,7 @@ def init_heyreach_routes(app):
             if linkedin_account_ids:
                 body["linkedInAccountIds"] = linkedin_account_ids
 
-            response = requests.post(url, headers=self.headers, json=body)
+            response = requests.post(url, headers=self.headers, json=body, timeout=60)
             if response.status_code != 200:
                 raise Exception(f"API Error: {response.text}")
 
@@ -106,7 +106,7 @@ def init_heyreach_routes(app):
 
             while True:
                 body = {"offset": offset, "limit": limit}
-                response = requests.post(url, headers=self.headers, json=body)
+                response = requests.post(url, headers=self.headers, json=body, timeout=60)
 
                 if response.status_code != 200:
                     return None
@@ -132,7 +132,7 @@ def init_heyreach_routes(app):
             url = f"{self.base_url}/inbox/GetChatroom/{account_id}/{conversation_id}"
 
             try:
-                response = requests.get(url, headers=self.headers)
+                response = requests.get(url, headers=self.headers, timeout=30)
                 if response.status_code != 200:
                     print(f"API Error for conversation {conversation_id}: {response.status_code} - {response.text}")
                     return []
@@ -209,7 +209,7 @@ def init_heyreach_routes(app):
                 "endDate": end_date
             }
 
-            response = requests.post(url, headers=headers, json=body)
+            response = requests.post(url, headers=headers, json=body, timeout=60)
 
             if response.status_code != 200:
                 return jsonify({'error': 'Erreur lors de la récupération des stats'}), response.status_code
@@ -283,7 +283,7 @@ def init_heyreach_routes(app):
                 "endDate": end_date
             }
             try:
-                stats_response = requests.post(stats_url, headers=headers, json=stats_body)
+                stats_response = requests.post(stats_url, headers=headers, json=stats_body, timeout=60)
                 if stats_response.status_code == 200:
                     stats = stats_response.json().get('overallStats', {})
                 else:
@@ -326,9 +326,15 @@ def init_heyreach_routes(app):
 
             # Write data
             total_convs = len(conversations)
+            import time as time_module
+            start_time = time_module.time()
+
             for idx, conv in enumerate(conversations):
                 if idx % 50 == 0:
-                    print(f"Processing conversation {idx+1}/{total_convs}...")
+                    elapsed = time_module.time() - start_time
+                    rate = idx / elapsed if idx > 0 else 0
+                    remaining = (total_convs - idx) / rate if rate > 0 else 0
+                    print(f"Processing {idx+1}/{total_convs} conversations... ({rate:.1f} conv/s, ETA: {remaining/60:.1f}min)")
 
                 profile = conv.get('correspondentProfile', {})
                 lead_name = f"{profile.get('firstName', '')} {profile.get('lastName', '')}".strip()
