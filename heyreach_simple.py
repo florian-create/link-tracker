@@ -306,7 +306,7 @@ def init_heyreach_routes(app):
             ])
             writer.writerow([])  # Empty row
 
-            # Header with all useful lead info and 30 message columns
+            # Header with all useful lead info and full conversation
             header = [
                 'Lead Name',
                 'Company',
@@ -318,11 +318,9 @@ def init_heyreach_routes(app):
                 'First Message Date',
                 'Last Message Date',
                 'Total Messages',
-                'Tags'
+                'Tags',
+                'Full Conversation'
             ]
-            # Add Message_1 to Message_30 columns
-            for i in range(1, 31):
-                header.append(f'Message_{i}')
 
             writer.writerow(header)
 
@@ -361,20 +359,18 @@ def init_heyreach_routes(app):
                 # Get tags as comma-separated string
                 tags = ', '.join(profile.get('tags', []))
 
-                # Extract message text from 'body' field and format with sender
-                message_texts = []
-                for msg in messages[:30]:  # Limit to 30 messages
+                # Build full conversation as one formatted string
+                conversation_parts = []
+                for msg in messages:
                     sender = msg.get('sender', 'UNKNOWN')
-                    # Replace any sender that's not ME with LEAD
                     sender_label = 'ME' if sender == 'ME' else 'LEAD'
                     body = msg.get('body', '')
-                    # Format: [SENDER] message
-                    message_text = f"[{sender_label}] {body}" if body else ""
-                    message_texts.append(message_text)
+                    if body:
+                        # Format: [SENDER] message with line break
+                        conversation_parts.append(f"[{sender_label}] {body}")
 
-                # Pad with empty strings if less than 30 messages
-                while len(message_texts) < 30:
-                    message_texts.append('')
+                # Join all messages with line breaks
+                full_conversation = "\n\n".join(conversation_parts)
 
                 row = [
                     lead_name or 'N/A',
@@ -387,10 +383,9 @@ def init_heyreach_routes(app):
                     first_message_date,
                     last_message_date,
                     conv.get('totalMessages', 0),
-                    tags
+                    tags,
+                    full_conversation
                 ]
-                # Add all 30 message columns
-                row.extend(message_texts)
 
                 writer.writerow(row)
 
