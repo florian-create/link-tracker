@@ -674,7 +674,12 @@
         <div id="stats-section" class="section" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 class="section-title">Statistiques</h3>
-                <button type="button" onclick="loadStats()" class="btn btn-sm btn-primary">Actualiser</button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" onclick="copyChartToClipboard()" class="btn btn-sm btn-secondary" title="Copier le graphique">
+                        📋 Copier
+                    </button>
+                    <button type="button" onclick="loadStats()" class="btn btn-sm btn-primary">Actualiser</button>
+                </div>
             </div>
             <div id="stats-content"></div>
         </div>
@@ -978,30 +983,24 @@
             const pctMessages = connectionsSent > 0 ? (messagesSent / connectionsSent * 100) : 0;
             const pctReplies = connectionsSent > 0 ? (repliesReceived / connectionsSent * 100) : 0;
 
-            // Function to get color - INVERTED: Yellow (100%) → Red (low %)
-            function getBarColor(intensity) {
-                // Plus de contraste: jaune très clair → rouge très foncé
-                if (intensity >= 0.888) return 'rgba(255, 253, 150, 1)';      // Jaune très clair (100%)
-                if (intensity >= 0.777) return 'rgba(255, 235, 100, 0.95)';   // Jaune clair
-                if (intensity >= 0.666) return 'rgba(255, 200, 80, 0.9)';     // Jaune-orange
-                if (intensity >= 0.555) return 'rgba(255, 165, 60, 0.9)';     // Orange clair
-                if (intensity >= 0.444) return 'rgba(255, 130, 50, 0.9)';     // Orange
-                if (intensity >= 0.333) return 'rgba(245, 100, 45, 0.95)';    // Orange foncé
-                if (intensity >= 0.222) return 'rgba(230, 70, 40, 0.95)';     // Rouge-orange
-                if (intensity >= 0.111) return 'rgba(200, 50, 35, 1)';        // Rouge foncé
-                return 'rgba(180, 30, 25, 1)';                                 // Rouge très foncé
-            }
+            // Colors style Link Tracker Timeline - transparent with solid border
+            const stageColors = [
+                { fill: 'rgba(250, 204, 21, 0.6)', stroke: 'rgba(250, 204, 21, 0.95)' },  // Jaune
+                { fill: 'rgba(16, 185, 129, 0.6)', stroke: 'rgba(16, 185, 129, 0.95)' },  // Vert
+                { fill: 'rgba(59, 130, 246, 0.6)', stroke: 'rgba(59, 130, 246, 0.95)' },  // Bleu
+                { fill: 'rgba(147, 51, 234, 0.6)', stroke: 'rgba(147, 51, 234, 0.95)' }   // Violet
+            ];
 
             const stages = [
-                { label: 'Connexions envoyées', value: connectionsSent, pct: 100, intensity: 1.0 },
-                { label: 'Connexions acceptées', value: connectionsAccepted, pct: pctAccepted, intensity: pctAccepted / 100 },
-                { label: 'Messages envoyés', value: messagesSent, pct: pctMessages, intensity: pctMessages / 100 },
-                { label: 'Réponses reçues', value: repliesReceived, pct: pctReplies, intensity: pctReplies / 100 }
+                { label: 'Connexions envoyées', value: connectionsSent, pct: 100, colorIndex: 0 },
+                { label: 'Connexions acceptées', value: connectionsAccepted, pct: pctAccepted, colorIndex: 1 },
+                { label: 'Messages envoyés', value: messagesSent, pct: pctMessages, colorIndex: 2 },
+                { label: 'Réponses reçues', value: repliesReceived, pct: pctReplies, colorIndex: 3 }
             ];
 
             const html = `
                 <div style="max-width: 900px; margin: 0 auto; padding: 2rem;">
-                    <svg viewBox="0 0 900 450" style="width: 100%; height: auto;">
+                    <svg id="stats-chart-svg" viewBox="0 0 900 450" style="width: 100%; height: auto; background: #0a0a0a;">
                         <!-- Grid background -->
                         <defs>
                             <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -1016,7 +1015,7 @@
                             const barWidth = (stage.pct / 100) * maxBarWidth;
                             const centerX = 450; // Centre du SVG
                             const barX = centerX - (barWidth / 2); // Centrer la barre
-                            const color = getBarColor(stage.intensity);
+                            const colors = stageColors[stage.colorIndex];
 
                             return `
                                 <!-- Stage ${i + 1}: ${stage.label} -->
@@ -1025,19 +1024,19 @@
                                     ${stage.label}
                                 </text>
 
-                                <!-- Funnel bar (centered) -->
+                                <!-- Funnel bar (centered, transparent fill + solid stroke) -->
                                 <rect x="${barX}" y="${y + 10}" width="${barWidth}" height="50"
-                                      fill="${color}" stroke="#333" stroke-width="1.5" rx="3"/>
+                                      fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="2.5" rx="4"/>
 
                                 <!-- Value inside bar -->
                                 <text x="${centerX}" y="${y + 42}"
-                                      fill="#000" font-size="20" font-weight="700" text-anchor="middle">
+                                      fill="#fff" font-size="20" font-weight="700" text-anchor="middle">
                                     ${stage.value}
                                 </text>
 
                                 <!-- Percentage on right -->
                                 <text x="${centerX + maxBarWidth/2 + 50}" y="${y + 42}"
-                                      fill="#888" font-size="15" font-weight="500">
+                                      fill="#aaa" font-size="15" font-weight="500">
                                     ${stage.pct.toFixed(1)}%
                                 </text>
                             `;
@@ -1047,6 +1046,76 @@
             `;
 
             STATS_CONTENT.innerHTML = html;
+        }
+
+        // ===== COPY CHART TO CLIPBOARD =====
+
+        async function copyChartToClipboard() {
+            try {
+                const svg = document.getElementById('stats-chart-svg');
+                if (!svg) {
+                    showError('Graphique non trouvé');
+                    return;
+                }
+
+                // Get SVG dimensions
+                const svgData = new XMLSerializer().serializeToString(svg);
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Set canvas size (2x for better quality)
+                canvas.width = 1800;
+                canvas.height = 900;
+
+                // Create an image from SVG
+                const img = new Image();
+                const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(svgBlob);
+
+                img.onload = async function() {
+                    // Draw image on canvas with dark background
+                    ctx.fillStyle = '#0a0a0a';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(url);
+
+                    // Convert canvas to blob
+                    canvas.toBlob(async function(blob) {
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({
+                                    'image/png': blob
+                                })
+                            ]);
+
+                            // Show success feedback
+                            const btn = event.target.closest('button');
+                            const originalText = btn.innerHTML;
+                            btn.innerHTML = '✅ Copié!';
+                            btn.disabled = true;
+
+                            setTimeout(() => {
+                                btn.innerHTML = originalText;
+                                btn.disabled = false;
+                            }, 2000);
+                        } catch (err) {
+                            console.error('Erreur lors de la copie:', err);
+                            showError('Erreur lors de la copie dans le presse-papier');
+                        }
+                    }, 'image/png');
+                };
+
+                img.onerror = function() {
+                    showError('Erreur lors de la conversion du graphique');
+                    URL.revokeObjectURL(url);
+                };
+
+                img.src = url;
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                showError('Erreur lors de la copie du graphique');
+            }
         }
 
         // ===== TIME RANGE =====
