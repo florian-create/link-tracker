@@ -3,8 +3,11 @@ Gunicorn configuration file for HeyReach exports
 Sets timeout to 30 minutes to handle large exports
 """
 
-# Server socket
-bind = "0.0.0.0:10000"
+import os
+
+# Server socket - use PORT from environment (Render requirement)
+port = os.environ.get("PORT", "10000")
+bind = f"0.0.0.0:{port}"
 
 # Worker processes
 workers = 2
@@ -20,6 +23,16 @@ keepalive = 5
 accesslog = "-"
 errorlog = "-"
 loglevel = "info"
+
+# Startup hook to confirm config is loaded
+def on_starting(server):
+    print("=" * 60)
+    print("🚀 GUNICORN CONFIG LOADED")
+    print(f"   Port: {port}")
+    print(f"   Timeout: {timeout} seconds ({timeout/60:.1f} minutes)")
+    print(f"   Workers: {workers}")
+    print(f"   Threads: {threads}")
+    print("=" * 60)
 
 # Process naming
 proc_name = "link-tracker"
