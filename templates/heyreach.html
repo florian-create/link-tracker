@@ -26,6 +26,111 @@
             width: 100%;
             max-width: 100vw;
             min-height: 100vh;
+            display: flex;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 240px;
+            background: #111;
+            border-right: 1px solid #222;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 2rem 1.5rem 1.5rem;
+            border-bottom: 1px solid #222;
+        }
+
+        .sidebar-logo {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem 0;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .sidebar-link:hover {
+            color: #e5e5e5;
+            background: #1a1a1a;
+        }
+
+        .sidebar-link.active {
+            color: #fff;
+            background: #1a1a1a;
+            border-left: 2px solid #fff;
+        }
+
+        .sidebar-link svg {
+            flex-shrink: 0;
+        }
+
+        .sidebar-footer {
+            padding: 1rem 0;
+            border-top: 1px solid #222;
+        }
+
+        /* ===== MAIN WRAPPER ===== */
+        .main-wrapper {
+            margin-left: 240px;
+            width: calc(100% - 240px);
+            min-height: 100vh;
+        }
+
+        /* ===== HEADER BAR ===== */
+        .header-bar {
+            background: #111;
+            border-bottom: 1px solid #222;
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            width: 100%;
+        }
+
+        .header-bar-content {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .logo-subtitle {
+            font-size: 0.5rem;
+            font-weight: 400;
+            color: #666;
+            letter-spacing: 0.5px;
+            text-transform: lowercase;
         }
 
         /* ===== CONTAINER ===== */
@@ -425,6 +530,15 @@
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+
             .container {
                 padding: 2rem 1.5rem;
             }
@@ -455,12 +569,48 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>HeyReach Exporter</h1>
-            <p>Export your HeyReach campaign data to CSV</p>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">TOOLS</div>
         </div>
+        <nav class="sidebar-nav">
+            <a href="/tracker" class="sidebar-link">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6.5 9.5L9.5 6.5M8.5 4.5H11.5V7.5M12 8V12.5C12 13.0523 11.5523 13.5 11 13.5H4C3.44772 13.5 3 13.0523 3 12.5V5.5C3 4.94772 3.44772 4.5 4 4.5H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Link Tracker</span>
+            </a>
+            <a href="/heyreach" class="sidebar-link active">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 8L8 2L14 8M3 7V13.5C3 13.7761 3.22386 14 3.5 14H6.5V10.5C6.5 10.2239 6.72386 10 7 10H9C9.27614 10 9.5 10.2239 9.5 10.5V14H12.5C12.7761 14 13 13.7761 13 13.5V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>HeyReach Export</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout" class="sidebar-link">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 14H3.5C3.22386 14 3 13.7761 3 13.5V2.5C3 2.22386 3.22386 2 3.5 2H6M11 11L14 8M14 8L11 5M14 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Déconnexion</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <!-- Header Bar -->
+        <div class="header-bar">
+            <div class="header-bar-content">
+                <div class="logo">
+                    <span>HEYREACH EXPORTER</span>
+                    <span class="logo-subtitle">by aura</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
 
         <!-- Workspace form modal (hidden by default) -->
         <div id="workspace-form-modal" class="modal" style="display: none;">
@@ -569,6 +719,7 @@
 
         <!-- Success -->
         <div id="success" class="alert alert-success" style="display: none;"></div>
+        </div>
     </div>
 
     <script>

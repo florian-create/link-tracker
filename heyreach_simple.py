@@ -9,6 +9,10 @@ import io
 import csv
 from datetime import datetime
 import os
+import json
+import base64
+from PIL import Image, ImageDraw, ImageFont
+import google.generativeai as genai
 
 def init_heyreach_routes(app):
     """Initialize HeyReach routes in the main app"""
@@ -241,6 +245,94 @@ def init_heyreach_routes(app):
                 mimetype='text/csv',
                 as_attachment=True,
                 download_name=f'heyreach_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+            )
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/heyreach/api/analyze-hot-leads', methods=['POST'])
+    def heyreach_api_analyze_hot_leads():
+        """Analyze conversations and return hot leads with AI categorization"""
+        try:
+            from heyreach_reporting import analyze_conversations
+
+            data = request.json
+            api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
+
+            if not api_key:
+                return jsonify({'error': 'Clé API requise'}), 400
+
+            campaign_ids = data.get('campaign_ids', [])
+            if isinstance(campaign_ids, str):
+                campaign_ids = [int(x.strip()) for x in campaign_ids.split(',') if x.strip().isdigit()]
+            elif isinstance(campaign_ids, list):
+                campaign_ids = [int(x) for x in campaign_ids if str(x).strip().isdigit()]
+
+            filter_campaign_ids = campaign_ids if campaign_ids and len(campaign_ids) > 0 else None
+
+            date_from = data.get('date_from')
+            date_to = data.get('date_to')
+
+            api = HeyReachAPI(api_key)
+            conversations = api.get_all_conversations(
+                campaign_ids=filter_campaign_ids,
+                date_from=date_from,
+                date_to=date_to
+            )
+
+            # Analyser avec l'IA
+            analysis = analyze_conversations(conversations)
+
+            return jsonify(analysis)
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/heyreach/api/generate-report', methods=['POST'])
+    def heyreach_api_generate_report():
+        """Generate PNG report with stats and hot leads"""
+        try:
+            from heyreach_reporting import generate_report_image
+
+            data = request.json
+            api_key = data.get('api_key', '').strip() or os.environ.get('HEYREACH_API_KEY')
+
+            if not api_key:
+                return jsonify({'error': 'Clé API requise'}), 400
+
+            # Get stats
+            campaign_ids = data.get('campaign_ids', [])
+            start_date = data.get('start_date')
+            end_date = data.get('end_date')
+            time_period = data.get('time_period', 'All time')
+
+            # Get stats from HeyReach
+            url = "https://api.heyreach.io/api/public/stats/GetOverallStats"
+            headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
+            body = {
+                "accountIds": [],
+                "campaignIds": campaign_ids if campaign_ids else [],
+                "startDate": start_date,
+                "endDate": end_date
+            }
+
+            stats_response = requests.post(url, headers=headers, json=body)
+            if stats_response.status_code != 200:
+                return jsonify({'error': 'Erreur lors de la récupération des stats'}), 500
+
+            stats = stats_response.json()
+
+            # Get hot leads from request
+            hot_leads = data.get('hot_leads', [])
+
+            # Generate image
+            img_buffer = generate_report_image(stats, hot_leads, time_period)
+
+            return send_file(
+                img_buffer,
+                mimetype='image/png',
+                as_attachment=True,
+                download_name=f'heyreach_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png'
             )
 
         except Exception as e:
